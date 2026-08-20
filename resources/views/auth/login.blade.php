@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Iniciar Sesión - SGGDI</title>
+    <title>Iniciar Sesión - SADHCC</title>
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ asset('/imagenes/logo-app.ico') }}">
     <link rel="shortcut icon" href="{{ asset('/imagenes/logo-app.ico') }}">
@@ -183,10 +183,10 @@
                     <img src="/imagenes/logo-cecyte.jpg" alt="CECyTEZ" style="display: block; margin: 0 auto; width: 40%; max-width: 800px; height: auto;" onerror="this.style.display='none'">
                 </div>
                 <div class="welcome-message">
-                    SISTEMA GENERAL<br>DE GESTIÓN DIGITAL DE<br>LA INFORMACIÓN EN EL<br>CECyTEZ PLANTEL RÍO GRANDE
+                    SISTEMA DE AGENDADO DIGITAL<br>DE HORARIOS DEL CENTRO DE COMPUTO<br>DEL CECyTEZ PLANTEL RÍO GRANDE
                 </div>
                 <div class="welcome-subtitle">
-                    Plataforma Oficial del Plantel
+                    Plataforma Oficial del Centro de Cómputo
                 </div>
             </div>
         </div>

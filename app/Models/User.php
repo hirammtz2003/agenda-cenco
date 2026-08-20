@@ -26,10 +26,9 @@ class User extends Authenticatable
         'telefono',
         'num_empleado',
         'password',
-        'pw_recuperacion',
+        'pw_temporal',
         'tipo',
-        'privilegios',
-        'estatus',
+        'estatus'
     ];
 
     public $timestamps = false;
@@ -68,9 +67,15 @@ class User extends Authenticatable
         return trim($this->nombre . ' ' . $this->apellido1 . ' ' . ($this->apellido2 ?? ''));
     }
 
-        public function getApellidosAttribute()
+    // Método para verificar si es admin
+    public function isAdmin()
     {
-        return trim($this->apellido1 . ' ' . ($this->apellido2 ?? ''));
+        return $this->tipo === 'Administrador';
+    }
+
+    public function isDocente()
+    {
+        return $this->tipo === 'Docente';
     }
 
     // Accessor para email (si algún paquete espera 'email')
@@ -91,102 +96,28 @@ class User extends Authenticatable
         return 'num_empleado';
     }
 
-    // En app/Models/User.php, dentro de la clase User
+    // Obtiene la clase CSS para el badge de tipo
+    public function getTipoBadgeClass(): string
+    {
+        return match($this->tipo) {
+            'Administrador' => 'bg-danger',
+            'Docente' => 'bg-primary',
+            default => 'bg-secondary'
+        };
+    }
 
-/**
- * Verifica si el usuario tiene privilegio de administración general (G en posición 0)
- */
-public function tienePrivilegioG0(): bool
-{
-    return !empty($this->privilegios) && $this->privilegios[0] === 'G';
-}
-
-/**
- * Verifica si el usuario tiene privilegio de consulta (C en posición 0)
- */
-public function tienePrivilegioC0(): bool
-{
-    return !empty($this->privilegios) && $this->privilegios[0] === 'C';
-}
-
-/**
- * Verifica si puede editar usuarios (G en posición 0)
- */
-public function puedeEditarUsuarios(): bool
-{
-    return $this->tienePrivilegioG0();
-}
-
-/**
- * Verifica si puede solo consultar usuarios (C en posición 0)
- */
-public function puedeConsultarUsuarios(): bool
-{
-    return $this->tienePrivilegioC0() || $this->tienePrivilegioG0();
-}
-
-/**
- * Obtiene la clase CSS para el badge de tipo
- */
-public function getTipoBadgeClass(): string
-{
-    return match($this->tipo) {
-        'Administrador' => 'bg-danger',
-        'Directivo' => 'bg-warning text-dark',
-        'Docente' => 'bg-primary',
-        'Trabajo Social' => 'bg-info',
-        default => 'bg-secondary'
-    };
-}
-
-/**
- * Obtiene los badges de privilegios para mostrar
- */
-public function getPrivilegiosBadges(): array
-{
-    $badges = [];
-    
-    if (empty($this->privilegios) || strlen($this->privilegios) < 5) {
+    // Obtiene los badges de privilegios para mostrar
+    public function getPrivilegiosBadges(): array
+    {
+        $badges = [];
+        
+        // Privilegios
+        if ($tipo === 'Administrador') {
+            $badges[] = '<span class="badge bg-primary mb-1">Administración general del Sistema</span>';
+        } else {
+            $badges[] = '<span class="badge bg-info mb-1">Reservación de horas</span>';
+        }
+        
         return $badges;
     }
-    
-    $privilegios = $this->privilegios;
-    
-    // Posición 0 - Nivel general
-    if ($privilegios[0] === 'G') {
-        $badges[] = '<span class="badge bg-primary mb-1">Administración general del Sistema</span>';
-    } elseif ($privilegios[0] === 'C') {
-        $badges[] = '<span class="badge bg-info mb-1">Sólo consulta de Usuarios</span>';
-    }
-    
-    // Posiciones 1-4 para C (Consulta)
-    if ($privilegios[1] === 'C') {
-        $badges[] = '<span class="badge bg-secondary mb-1">Sólo consulta general de Alumnos</span>';
-    }
-    if ($privilegios[2] === 'C') {
-        $badges[] = '<span class="badge bg-danger mb-1">Consulta por Grado</span>';
-    }
-    if ($privilegios[3] === 'C') {
-        $badges[] = '<span class="badge bg-warning mb-1">Consulta por Grupo</span>';
-    }
-    if ($privilegios[4] === 'C') {
-        $badges[] = '<span class="badge bg-success mb-1">Consulta individual de Alumnos</span>';
-    }
-    
-    // Posiciones 1-4 para G (Gestión)
-    if ($privilegios[1] === 'G') {
-        $badges[] = '<span class="badge bg-secondary mb-1">Gestión general de Alumnos</span>';
-    }
-    if ($privilegios[2] === 'G') {
-        $badges[] = '<span class="badge bg-danger mb-1">Gestión por Grado</span>';
-    }
-    if ($privilegios[3] === 'G') {
-        $badges[] = '<span class="badge bg-warning mb-1">Gestión por Grupo</span>';
-    }
-    if ($privilegios[4] === 'G') {
-        $badges[] = '<span class="badge bg-success mb-1">Gestión individual de Alumnos</span>';
-    }
-    
-    return $badges;
-}
 }

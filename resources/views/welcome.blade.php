@@ -5,8 +5,6 @@
 @php
     use App\Helpers\PrivilegiosHelper;
     $usuario = Auth::user();
-    $puedeConsultarGeneral = PrivilegiosHelper::consultaGeneral($usuario); // Para grupos
-    $puedeConsultarUsuarios = PrivilegiosHelper::puedeConsultar($usuario); // Para usuarios
 @endphp
 
 @push('styles')
@@ -51,7 +49,7 @@
     <div class="welcome-section">
         <div class="container text-center">
             <h1>Sistema General de Gestión Digital de la Información Personal de los Alumnos</h1>
-            <p class="lead">Plataforma Oficial Centralizada</p>
+            <p class="lead">Plataforma Oficial de Reservación</p>
         </div>
     </div>
 
@@ -72,7 +70,6 @@
             
             <div class="row g-4">
                 <!-- Módulo de Administración de Usuarios -->
-                @if($puedeConsultarUsuarios)
                 <div class="col-md-4">
                     <div class="card module-card bg-primary text-white">
                         <div class="card-body text-center">
@@ -87,15 +84,8 @@
                         </div>
                     </div>
                 </div>
-                @endif
 
                 <!-- Módulo de Configuración de Grupos -->
-                @php
-                    $puedeConsultarGrupos = PrivilegiosHelper::consultaGeneral($usuario) || 
-                                            PrivilegiosHelper::puedeConsultar($usuario);
-                @endphp
-
-                @if($puedeConsultarGrupos)
                 <div class="col-md-4">
                     <div class="card module-card bg-success text-white">
                         <div class="card-body text-center">
@@ -110,17 +100,8 @@
                         </div>
                     </div>
                 </div>
-                @endif
 
                 <!-- Módulo de Gestión de Información de Alumnos -->
-                @php
-                    $puedeVerAlumnos = PrivilegiosHelper::consultaGeneral($usuario) ||
-                                        PrivilegiosHelper::consultaGrado($usuario) ||
-                                        PrivilegiosHelper::consultaGrupo($usuario) ||
-                                        PrivilegiosHelper::consultaIndividual($usuario);
-                @endphp
-
-                @if($puedeVerAlumnos)
                 <div class="col-md-4">
                     <div class="card module-card bg-danger text-white">
                         <div class="card-body text-center">
@@ -135,15 +116,8 @@
                         </div>
                     </div>
                 </div>
-                @endif
 
                 <!-- Módulo de Configuración de Becas -->
-                @php
-                    $puedeVerBecas = PrivilegiosHelper::consultaGeneral($usuario) || 
-                                    PrivilegiosHelper::consultaGrado($usuario);
-                @endphp
-
-                @if($puedeVerBecas)
                 <div class="col-md-4">
                     <div class="card module-card bg-warning text-white">
                         <div class="card-body text-center">
@@ -158,17 +132,8 @@
                         </div>
                     </div>
                 </div>
-                @endif
 
                 <!-- Módulo de Datos y Estadísticas -->
-                @php
-                    $puedeVerEstadisticas = PrivilegiosHelper::consultaGeneral($usuario) ||
-                                            PrivilegiosHelper::consultaGrado($usuario) ||
-                                            PrivilegiosHelper::consultaGrupo($usuario) ||
-                                            PrivilegiosHelper::consultaIndividual($usuario);
-                @endphp
-
-                @if($puedeVerEstadisticas)
                 <div class="col-md-4">
                     <div class="card module-card bg-info text-white">
                         <div class="card-body text-center">
@@ -183,7 +148,6 @@
                         </div>
                     </div>
                 </div>
-                @endif
 
             </div>
         </div>

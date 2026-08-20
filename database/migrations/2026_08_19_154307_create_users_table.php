@@ -19,8 +19,7 @@ return new class extends Migration
             $table->integer('num_empleado')->unique();
             $table->string('password');
             $table->boolean('pw_temporal')->default(true);
-            $table->enum('tipo', ['Administrador', 'Directivo', 'Docente', 'Trabajo Social']);
-            $table->string('privilegios', 5)->nullable();
+            $table->enum('tipo', ['Administrador', 'Docente']);
             $table->boolean('estatus')->default(true);
         });
     }

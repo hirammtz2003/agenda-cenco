@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container">
         <a class="navbar-brand" href="{{ route('welcome') }}">
-            <i class="fas fa-database"></i> SGGDI CECyTEZ RG
+            <i class="fas fa-database"></i> SADHCC CECyTEZ RG
         </a>
         
         @auth

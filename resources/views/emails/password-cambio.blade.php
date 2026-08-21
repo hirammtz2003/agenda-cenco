@@ -10,8 +10,8 @@
         <!-- HEADER -->
         <tr>
             <td style="background-color: #8b0000; padding: 30px; text-align: center;">
-                <h1 style="margin: 0; font-size: 24px; color: #ffffff;">Sistema General de Gestión Digital de la Información Personal de los Alumnos en el CECyTEZ Plantel Río Grande</h1>
-                <p style="margin: 10px 0 0; color: #ffffff;">Plataforma Oficial Centralizada</p>
+                <h1 style="margin: 0; font-size: 24px; color: #ffffff;">Sistema de Agendado Digital de Horarios del Centro de Cómputo del CECyTEZ Plantel Río Grande</h1>
+                <p style="margin: 10px 0 0; color: #ffffff;">Plataforma Oficial de Reservación</p>
             </td>
         </tr>
         

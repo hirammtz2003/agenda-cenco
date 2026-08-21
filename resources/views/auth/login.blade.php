@@ -183,7 +183,7 @@
                     <img src="/imagenes/logo-cecyte.jpg" alt="CECyTEZ" style="display: block; margin: 0 auto; width: 40%; max-width: 800px; height: auto;" onerror="this.style.display='none'">
                 </div>
                 <div class="welcome-message">
-                    SISTEMA DE AGENDADO DIGITAL<br>DE HORARIOS DEL CENTRO DE COMPUTO<br>DEL CECyTEZ PLANTEL RÍO GRANDE
+                    SISTEMA DE AGENDADO DIGITAL<br>DE HORARIOS DEL CENTRO DE CÓMPUTO<br>DEL CECyTEZ PLANTEL RÍO GRANDE
                 </div>
                 <div class="welcome-subtitle">
                     Plataforma Oficial del Centro de Cómputo

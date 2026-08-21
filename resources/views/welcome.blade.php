@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Inicio - SGGDI')
+@section('title', 'Inicio - SADHCC')
 
 @php
     use App\Helpers\PrivilegiosHelper;
@@ -48,7 +48,7 @@
     <!--Welcome Section -->
     <div class="welcome-section">
         <div class="container text-center">
-            <h1>Sistema General de Gestión Digital de la Información Personal de los Alumnos</h1>
+            <h1>Sistema de Agendado Digital de Horarios del Centro de Cómputo</h1>
             <p class="lead">Plataforma Oficial de Reservación</p>
         </div>
     </div>

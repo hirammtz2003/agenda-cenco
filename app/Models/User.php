@@ -115,7 +115,7 @@ class User extends Authenticatable
         if ($tipo === 'Administrador') {
             $badges[] = '<span class="badge bg-primary mb-1">Administración general del Sistema</span>';
         } else {
-            $badges[] = '<span class="badge bg-info mb-1">Reservación de horas</span>';
+            $badges[] = '<span class="badge bg-info mb-1">Reservación de horas en el Centro de Cómputo</span>';
         }
         
         return $badges;

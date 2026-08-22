@@ -198,9 +198,7 @@
                         </div>
                         <div class="col-md-9 info-value">
                             @php
-                                $badgeClass = $user->tipo === 'Administrador' ? 'bg-danger' : 
-                                              ($user->tipo === 'Directivo' ? 'bg-warning' : 
-                                              ($user->tipo === 'Docente' ? 'bg-primary' : 'bg-info'));
+                                $badgeClass = $user->tipo === 'Administrador' ? 'bg-danger' : 'bg-primary';
                             @endphp
                             <span class="badge {{ $badgeClass }} badge-custom">
                                 {{ $user->tipo }}
@@ -215,31 +213,11 @@
                             </span>
                         </div>
                         <div class="col-md-9 info-value">
-                            @if($user->privilegios[0] == "G")
+                            @if($user->tipo == "Administrador")
                                 <span class="badge bg-primary">Administración general del Sistema</span>
-                            @elseif($user->privilegios[0] == "C")
-                                <span class="badge bg-primary">Sólo consulta de Usuarios</span>    
+                            @elseif($user->tipo == "Docente")
+                                <span class="badge bg-warning">Reservación de horas en el Centro de Cómputo</span>    
                             @endif
-                                                                            
-                            @if($user->privilegios[1] == "C")
-                                <span class="badge bg-secondary">Sólo consulta general de Alumnos</span>
-                            @elseif($user->privilegios[2] == "C")
-                                <span class="badge bg-danger">Consulta por Grado</span>
-                            @elseif($user->privilegios[3] == "C")
-                                <span class="badge bg-warning">Consulta por Grupo</span>
-                            @elseif($user->privilegios[4] == "C")
-                                <span class="badge bg-success">Consulta individual de Alumnos</span>
-                            @endif
-
-                            @if($user->privilegios[1] == "G")
-                                <span class="badge bg-secondary">Gestión general de Alumnos</span>
-                            @elseif($user->privilegios[2] == "G")
-                                <span class="badge bg-danger">Gestión por Grado</span>
-                            @elseif($user->privilegios[3] == "G")
-                                <span class="badge bg-warning">Gestión por Grupo</span>    
-                            @elseif($user->privilegios[4] == "G")
-                                <span class="badge bg-success">Gestión individual de Alumnos</span>                           
-                            @endif 
                         </div>                        
                     </div>
                 </div>

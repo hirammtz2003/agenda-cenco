@@ -1,13 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Administración de Usuarios - SGGDI')
+@section('title', 'Administración de Usuarios - SADHCC')
 
 @php
-    use App\Helpers\PrivilegiosHelper;
-    $usuarioActual = Auth::user();
-    $puedeEditar = PrivilegiosHelper::puedeEditar($usuarioActual);
-    $puedeConsultar = PrivilegiosHelper::puedeConsultar($usuarioActual);
-
+    $usuario = Auth::user();
+    $esAdmin = $usuario && $usuario->tipo === 'Administrador';
+    
     $breadcrumbs = [
         [
             'name' => 'Inicio',
@@ -53,81 +51,80 @@
 @endpush
 
 @section('content')
-@auth
-    <div class="container">
-        <!-- Breadcrumb -->
-        @include('partials.breadcrumb')
+<div class="container">
+    <!-- Breadcrumb -->
+    @include('partials.breadcrumb')
 
-        <!-- Título del menú -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <h2 class="border-bottom pb-3">
-                    <i class="fas fa-users-cog me-2 text-primary"></i>
-                    ADMINISTRACIÓN DE USUARIOS
-                </h2>
-            </div>
+    <!-- Título del menú -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="border-bottom pb-3">
+                <i class="fas fa-users-cog me-2 text-primary"></i>
+                ADMINISTRACIÓN DE USUARIOS
+            </h2>
         </div>
+    </div>
+    
+    <!-- Funciones disponibles (SOLO ADMIN) -->
+    @if($esAdmin)
+    <div class="module-section">
+        <h5 class="mb-4"><i class="fas fa-cubes"></i> FUNCIONES DISPONIBLES:</h5>
         
-        <!-- Funciones disponibles -->
-        <div class="module-section">
-            <h5 class="mb-4"><i class="fas fa-cubes"></i> FUNCIONES DISPONIBLES:</h5>
-            
-            <div class="row g-4">                
-                <!-- Función de Registro de Nuevos Usuarios -->
-                @if($puedeEditar) 
-                <div class="col-md-4">
-                    <div class="card module-card bg-danger text-white">
-                        <div class="card-body text-center">
-                            <div class="module-icon">
-                                <i class="fas fa-user-plus"></i>
-                            </div>
-                            <h5>Registro de Nuevos Usuarios</h5>
-                            <p class="small">Añade trabajadores del plantel autorizados</p>
-                            <a href="{{ route('admin.usuarios.registro') }}" class="btn btn-light mt-2">
-                                <i class="fas fa-arrow-right"></i> Acceder
-                            </a>
+        <div class="row g-4">                
+            <!-- Registro de Nuevos Usuarios -->
+            <div class="col-md-4">
+                <div class="card module-card bg-danger text-white">
+                    <div class="card-body text-center">
+                        <div class="module-icon">
+                            <i class="fas fa-user-plus"></i>
                         </div>
+                        <h5>Registro de Nuevos Usuarios</h5>
+                        <p class="small">Añade trabajadores del plantel autorizados</p>
+                        <a href="{{ route('admin.usuarios.registro') }}" class="btn btn-light mt-2">
+                            <i class="fas fa-arrow-right"></i> Acceder
+                        </a>
                     </div>
                 </div>
-                @endif
+            </div>
 
-                <!-- Función de Consulta y Edición de Usuarios -->
-                @if($puedeConsultar)
-                <div class="col-md-4">
-                    <div class="card module-card bg-secondary text-white">
-                        <div class="card-body text-center">
-                            <div class="module-icon">
-                                <i class="fas fa-user-edit"></i>
-                            </div>
-                            <h5>Consulta y Edición de Usuarios</h5>
-                            <p class="small">Visualiza y modifica registros</p>
-                            <a href="{{ route('admin.usuarios.consulta') }}" class="btn btn-light mt-2">
-                                <i class="fas fa-arrow-right"></i> Acceder
-                            </a>
+            <!-- Consulta y Edición de Usuarios -->
+            <div class="col-md-4">
+                <div class="card module-card bg-secondary text-white">
+                    <div class="card-body text-center">
+                        <div class="module-icon">
+                            <i class="fas fa-user-edit"></i>
                         </div>
+                        <h5>Consulta y Edición de Usuarios</h5>
+                        <p class="small">Visualiza y modifica registros</p>
+                        <a href="{{ route('admin.usuarios.consulta') }}" class="btn btn-light mt-2">
+                            <i class="fas fa-arrow-right"></i> Acceder
+                        </a>
                     </div>
                 </div>
-                @endif
+            </div>
 
-                @if($puedeEditar)
-                <!-- Función de Seguridad y Privilegios de Usuarios -->
-                <div class="col-md-4">
-                    <div class="card module-card bg-warning text-white">
-                        <div class="card-body text-center">
-                            <div class="module-icon">
-                                <i class="fa-solid fa-shield-alt"></i>
-                            </div>
-                            <h5>Seguridad y Privilegios de Usuarios</h5>
-                            <p class="small">Asigna privilegios y recuperación de cuenta</p>
-                            <a href="{{ route('admin.usuarios.seguridad') }}" class="btn btn-light mt-2">
-                                <i class="fas fa-arrow-right"></i> Acceder
-                            </a>
+            <!-- Seguridad y Privilegios de Usuarios -->
+            <div class="col-md-4">
+                <div class="card module-card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <div class="module-icon">
+                            <i class="fas fa-shield-alt"></i>
                         </div>
+                        <h5>Seguridad y Privilegios</h5>
+                        <p class="small">Asigna privilegios y recuperación de cuenta</p>
+                        <a href="{{ route('admin.usuarios.seguridad') }}" class="btn btn-light mt-2">
+                            <i class="fas fa-arrow-right"></i> Acceder
+                        </a>
                     </div>
                 </div>
-                @endif
             </div>
         </div>
-    </div>   
-@endauth
+    </div>
+    @else
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        No tienes permisos para acceder a esta sección. Solo los administradores pueden gestionar usuarios.
+    </div>
+    @endif
+</div>   
 @endsection

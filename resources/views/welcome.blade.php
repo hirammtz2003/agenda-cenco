@@ -3,8 +3,8 @@
 @section('title', 'Inicio - SADHCC')
 
 @php
-    use App\Helpers\PrivilegiosHelper;
     $usuario = Auth::user();
+    $esAdmin = $usuario && $usuario->tipo === 'Administrador';
 @endphp
 
 @push('styles')
@@ -70,6 +70,7 @@
             
             <div class="row g-4">
                 <!-- Módulo de Administración de Usuarios -->
+                @if($esAdmin)
                 <div class="col-md-4">
                     <div class="card module-card bg-primary text-white">
                         <div class="card-body text-center">
@@ -100,6 +101,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
                 <!-- Módulo de Gestión de Información de Alumnos -->
                 <div class="col-md-4">
@@ -110,7 +112,7 @@
                             </div>
                             <h5>Gestión de Información de Alumnos</h5>
                             <p class="small">Gestiona los alumnos inscritos</p>
-                            <a href="{{ route('alumnos.index') }}" class="btn btn-light mt-2">
+                            <a href="#" class="btn btn-light mt-2">
                                 <i class="fas fa-arrow-right"></i> Acceder
                             </a>
                         </div>
@@ -126,7 +128,7 @@
                             </div>
                             <h5>Configuración de Becas</h5>
                             <p class="small">Gestiona la información de becas disponibles</p>
-                            <a href="{{ route('becas.index') }}" class="btn btn-light mt-2">
+                            <a href="#" class="btn btn-light mt-2">
                                 <i class="fas fa-arrow-right"></i> Acceder
                             </a>
                         </div>
@@ -142,7 +144,7 @@
                             </div>
                             <h5>Datos y Estadísticas</h5>
                             <p class="small">Realiza análisis de la información</p>
-                            <a href="{{ route('datos-estadisticas.index') }}" class="btn btn-light mt-2">
+                            <a href="#" class="btn btn-light mt-2">
                                 <i class="fas fa-arrow-right"></i> Acceder
                             </a>
                         </div>

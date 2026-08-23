@@ -10,10 +10,15 @@ class AdminMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        if (Auth::check() && Auth::user()->tipo === 'Administrador') {
-            return $next($request);
+        if (!Auth::check()) {
+            return redirect()->route('login');
         }
-        
-        return redirect()->route('welcome')->with('error', 'No tienes permisos para acceder a esta sección.');
+
+        // Verificar si el usuario es Administrador
+        if (Auth::user()->tipo !== 'Administrador') {
+            abort(403, 'Acceso denegado. Solo administradores pueden acceder a esta sección.');
+        }
+
+        return $next($request);
     }
 }

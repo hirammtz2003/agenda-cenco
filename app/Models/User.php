@@ -44,7 +44,7 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'pw_recuperacion' => 'boolean',
+        'pw_temporal' => 'boolean',
     ];
 
     /**
@@ -56,7 +56,7 @@ class User extends Authenticatable
     {
         return [
             'password' => 'hashed',
-            'pw_recuperacion' => 'boolean',
+            'pw_temporal' => 'boolean',
             'estatus' => 'boolean',
         ];
     }

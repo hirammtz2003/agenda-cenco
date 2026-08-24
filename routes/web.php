@@ -43,20 +43,28 @@ Route::middleware(['auth'])->group(function () {
     // ============ MÓDULOS DE ADMINISTRACIÓN (SOLO ADMINISTRADORES) ============
     Route::prefix('admin')->name('admin.')->middleware(['admin'])->group(function () {
         
+        // Menú principal de administración
+        Route::get('/', function () {
+            return redirect()->route('admin.usuarios.index');
+        });
+        
         // Administración de Usuarios
         Route::prefix('usuarios')->name('usuarios.')->group(function () {
             Route::get('/', [UsuarioController::class, 'index'])->name('index');
             Route::get('/registro', [UsuarioController::class, 'create'])->name('registro');
             Route::post('/', [UsuarioController::class, 'store'])->name('store');
-            Route::get('/{id}/editar', [UsuarioController::class, 'edit'])->name('edit');
-            Route::put('/{id}', [UsuarioController::class, 'update'])->name('update');
-            Route::delete('/{id}', [UsuarioController::class, 'destroy'])->name('destroy');
             Route::get('/consulta', [UsuarioController::class, 'consulta'])->name('consulta');
             Route::get('/seguridad', [UsuarioController::class, 'seguridad'])->name('seguridad');
+            
+            // AJAX endpoints
+            Route::post('/update-bulk', [UsuarioController::class, 'updateBulk'])->name('update-bulk');
+            Route::delete('/{id}', [UsuarioController::class, 'destroy'])->name('destroy');
+            Route::post('/buscar-seguridad', [UsuarioController::class, 'buscarParaSeguridad'])->name('buscar-seguridad');
+            Route::get('/{id}/obtener-seguridad', [UsuarioController::class, 'obtenerUsuarioSeguridad'])->name('obtener-seguridad');
             Route::post('/guardar-seguridad', [UsuarioController::class, 'guardarSeguridad'])->name('guardar-seguridad');
         });
         
-        // Administración de Grupos
+        // Administración de Grupos (si los usas)
         Route::prefix('grupos')->name('grupos.')->group(function () {
             Route::get('/', [GrupoController::class, 'index'])->name('index');
             Route::get('/listar', [GrupoController::class, 'listar'])->name('listar');

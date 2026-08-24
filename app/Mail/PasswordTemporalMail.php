@@ -25,7 +25,7 @@ class PasswordTemporalMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Contraseña Temporal - SGDI CECyTEZ',
+            subject: 'Contraseña Temporal - SADHCC CECyTEZ',
         );
     }
 

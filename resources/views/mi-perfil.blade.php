@@ -7,8 +7,6 @@
 @php
     use App\Helpers\PrivilegiosHelper;
     $usuarioActual = Auth::user();
-    $puedeEditar = PrivilegiosHelper::puedeEditar($usuarioActual);
-    $puedeConsultar = PrivilegiosHelper::puedeConsultar($usuarioActual);
 
     $breadcrumbs = [
         [

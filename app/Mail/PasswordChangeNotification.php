@@ -23,7 +23,7 @@ class PasswordChangeNotification extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Notificación de Cambio de Contraseña - SGDI',
+            subject: 'Notificación de Cambio de Contraseña - SADHCC CECyTEZ',
         );
     }
 

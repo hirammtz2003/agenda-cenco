@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Registro de Nuevos Usuarios - SGGDI')
+@section('title', 'Registro de Nuevos Usuarios - SADHCC')
 
 @php
     $breadcrumbs = [
@@ -39,6 +39,20 @@
         font-size: 0.8rem;
         margin-left: 5px;
     }
+    
+    /* Desactivar autocompletado de Chrome */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 30px white inset !important;
+        box-shadow: 0 0 0 30px white inset !important;
+    }
+    
+    /* Quitar el fondo amarillo del autocomplete */
+    input:-webkit-autofill {
+        -webkit-text-fill-color: #212529 !important;
+    }
 </style>
 @endpush
 
@@ -56,11 +70,21 @@
             </h2>
         </div>
     </div>
+
+    <!-- Mensaje de error general -->
+    @if($errors->any() && !$errors->has('nombre') && !$errors->has('apellido1') && !$errors->has('email_personal'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <strong>Error:</strong> Por favor corrige los siguientes campos.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
     
-    <form method="POST" action="{{ route('admin.usuarios.store') }}" id="registroForm">
+    <form method="POST" action="{{ route('admin.usuarios.store') }}" id="registroForm" autocomplete="off">
         @csrf
         
         <div class="module-section">
+            <!-- Datos personales -->
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label class="form-label">Nombre(s) *</label>
@@ -70,8 +94,6 @@
                            value="{{ old('nombre') }}" 
                            maxlength="30"
                            autocomplete="off"
-                           readonly
-                           onfocus="this.removeAttribute('readonly')"
                            required
                            oninput="updateCounter(this, 'nombreCounter')">
                     <small class="text-muted"><span id="nombreCounter">0</span>/30</small>
@@ -87,8 +109,6 @@
                            value="{{ old('apellido1') }}" 
                            maxlength="20"
                            autocomplete="off"
-                           readonly
-                           onfocus="this.removeAttribute('readonly')"
                            required
                            oninput="updateCounter(this, 'apellido1Counter')">
                     <small class="text-muted"><span id="apellido1Counter">0</span>/20</small>
@@ -104,10 +124,7 @@
                            value="{{ old('apellido2') }}"
                            maxlength="20"
                            autocomplete="off"
-                           readonly
-                           onfocus="this.removeAttribute('readonly')"
                            placeholder="Si no existe, omitir"
-                           autocomplete="off"
                            oninput="updateCounter(this, 'apellido2Counter')">
                     <small class="text-muted"><span id="apellido2Counter">0</span>/20</small>
                     @error('apellido2')
@@ -116,6 +133,7 @@
                 </div>
             </div>
             
+            <!-- Contacto -->
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label class="form-label">Email Personal *</label>
@@ -125,8 +143,6 @@
                            value="{{ old('email_personal') }}" 
                            maxlength="50"
                            autocomplete="off"
-                           readonly
-                           onfocus="this.removeAttribute('readonly')"
                            required
                            oninput="updateCounter(this, 'emailPersonalCounter')">
                     <small class="text-muted"><span id="emailPersonalCounter">0</span>/50</small>
@@ -142,8 +158,6 @@
                            value="{{ old('email_institucional') }}" 
                            maxlength="50"
                            autocomplete="off"
-                           readonly
-                           onfocus="this.removeAttribute('readonly')"
                            required
                            oninput="updateCounter(this, 'emailInstCounter')">
                     <small class="text-muted"><span id="emailInstCounter">0</span>/50</small>
@@ -159,8 +173,6 @@
                            value="{{ old('telefono') }}" 
                            maxlength="10"
                            autocomplete="off"
-                           readonly
-                           onfocus="this.removeAttribute('readonly')"
                            pattern="[0-9]{10}"
                            placeholder="10 dígitos"
                            required
@@ -172,16 +184,15 @@
                 </div>
             </div>
             
-            <div class="row mb-5">           
+            <!-- Datos laborales -->
+            <div class="row mb-3">           
                 <div class="col-md-4">
                     <label class="form-label">Número de Empleado *</label>
-                    <input type="text" 
+                    <input type="number" 
                            class="form-control @error('num_empleado') is-invalid @enderror" 
                            name="num_empleado" 
                            value="{{ old('num_empleado') }}"
                            autocomplete="off"
-                           readonly
-                           onfocus="this.removeAttribute('readonly')" 
                            required>
                     @error('num_empleado')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -192,31 +203,23 @@
                     <select name="tipo" id="tipo" class="form-select @error('tipo') is-invalid @enderror" required>
                         <option value="">—Seleccione una opción—</option>
                         <option value="Administrador" {{ old('tipo') == 'Administrador' ? 'selected' : '' }}>Administrador</option>
-                        <option value="Directivo" {{ old('tipo') == 'Directivo' ? 'selected' : '' }}>Directivo</option>
                         <option value="Docente" {{ old('tipo') == 'Docente' ? 'selected' : '' }}>Docente</option>
-                        <option value="Trabajo Social" {{ old('tipo') == 'Trabajo Social' ? 'selected' : '' }}>Trabajo Social</option>
                     </select>
                     @error('tipo')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Privilegios</label>
-                    <!-- Campo oculto para guardar la cadena de privilegios -->
-                    <input type="hidden" name="privilegios" id="privilegios" value="{{ old('privilegios') }}">
-                    
-                    <!-- Vista previa legible de los privilegios -->
-                    <div class="privilegios-preview" id="privilegiosPreview">
+                    <label class="form-label">Privilegios Asignados</label>
+                    <div class="privilegios-preview p-3 bg-light rounded" id="privilegiosPreview">
                         <div class="text-center text-muted" id="privilegiosPlaceholder">
                             <i class="fas fa-info-circle"></i> Seleccione un tipo de usuario
                         </div>
                     </div>
                     <small class="text-muted">Los privilegios se asignan automáticamente según el tipo</small>
-                    @error('privilegios')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
                 </div>               
             </div>
+
             <!-- Panel de contraseña y guardado -->
             <div class="row mt-4 pt-4 border-top">
                 <div class="col-md-4">
@@ -227,6 +230,7 @@
                            class="form-control @error('current_password') is-invalid @enderror" 
                            id="current_password" 
                            name="current_password" 
+                           autocomplete="new-password"
                            placeholder="Ingrese su contraseña para autorizar"
                            required>
                     <small class="text-muted">Requerida para confirmar la operación</small>
@@ -235,12 +239,12 @@
                     @enderror
                 </div>
                 <div class="col-md-8 d-flex align-items-end justify-content-end">
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 flex-wrap">
                         <button type="submit" class="btn btn-danger">
                             <i class="fas fa-save me-2"></i>Guardar Nuevo Usuario
                         </button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
-                            <i class="fas fa-times me-2"></i>Cancelar
+                        <button type="reset" class="btn btn-outline-secondary" onclick="return confirm('¿Seguro que quieres limpiar el formulario?')">
+                            <i class="fas fa-eraser me-2"></i>Limpiar
                         </button>
                         <a href="{{ route('admin.usuarios.index') }}" class="btn btn-outline-primary">
                             <i class="fas fa-arrow-left me-2"></i>Volver al Menú
@@ -255,7 +259,7 @@
 
 @push('scripts')
 <script>
-// Contadores de caracteres (se mantienen igual)
+// Contadores de caracteres
 function updateCounter(input, counterId) {
     document.getElementById(counterId).textContent = input.value.length;
 }
@@ -263,40 +267,22 @@ function updateCounter(input, counterId) {
 // Mapeo de privilegios según tipo de usuario
 const privilegiosMap = {
     'Administrador': {
-        cadena: 'GNNNN',
-        descripcion: '<span class="badge bg-primary">Administración general del Sistema</span>'
-    },
-    'Directivo': {
-        cadena: 'NCCCC',
-        descripcion: '<span class="badge bg-secondary">Sólo consulta general de Alumnos</span>'
+        descripcion: '<span class="badge bg-danger">Administración general del Sistema</span>'
     },
     'Docente': {
-        cadena: 'NNNCC',
-        descripcion: '<span class="badge bg-warning">Consulta por Grupo</span>'
+        descripcion: '<span class="badge bg-primary">Reservación de horas en el Centro de Cómputo</span>'
     },
-    'Trabajo Social': {
-        cadena: 'NNGGG',
-        descripcion: '<span class="badge bg-danger">Gestión por Grado</span>'
-    }
 };
 
 // Actualizar vista previa de privilegios cuando cambia el tipo
 document.getElementById('tipo').addEventListener('change', function() {
     const tipo = this.value;
-    const privilegiosInput = document.getElementById('privilegios');
     const previewDiv = document.getElementById('privilegiosPreview');
-    const placeholder = document.getElementById('privilegiosPlaceholder');
     
     if (tipo && privilegiosMap[tipo]) {
-        // Actualizar campo oculto
-        privilegiosInput.value = privilegiosMap[tipo].cadena;
-        
-        // Actualizar vista previa
         previewDiv.innerHTML = privilegiosMap[tipo].descripcion;
     } else {
-        // Limpiar si no hay tipo seleccionado
-        privilegiosInput.value = '';
-        previewDiv.innerHTML = '<div class="text-center text-muted" id="privilegiosPlaceholder"><i class="fas fa-info-circle"></i> Seleccione un tipo de usuario</div>';
+        previewDiv.innerHTML = '<div class="text-center text-muted"><i class="fas fa-info-circle"></i> Seleccione un tipo de usuario</div>';
     }
 });
 
@@ -304,12 +290,9 @@ document.getElementById('tipo').addEventListener('change', function() {
 document.addEventListener('DOMContentLoaded', function() {
     const tipoSelect = document.getElementById('tipo');
     const oldTipo = '{{ old('tipo') }}';
-    const oldPrivilegios = '{{ old('privilegios') }}';
     
     if (oldTipo && privilegiosMap[oldTipo]) {
         tipoSelect.value = oldTipo;
-        
-        // Disparar evento change para actualizar vista previa
         const event = new Event('change');
         tipoSelect.dispatchEvent(event);
     }
@@ -317,33 +300,30 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inicializar contadores
     const inputs = document.querySelectorAll('input[maxlength]');
     inputs.forEach(input => {
-        const counterId = input.getAttribute('oninput')?.match(/'([^']+)'/)?.[1];
-        if (counterId && input.value) {
-            document.getElementById(counterId).textContent = input.value.length;
+        const oninputAttr = input.getAttribute('oninput');
+        if (oninputAttr) {
+            const match = oninputAttr.match(/updateCounter\(this,\s*['"]([^'"]+)['"]\)/);
+            if (match && input.value) {
+                document.getElementById(match[1]).textContent = input.value.length;
+            }
         }
     });
 });
 
-// Función para resetear el formulario
-function resetForm() {
-    if (confirm('¿Está seguro de que desea cancelar el registro? Se perderán todos los datos ingresados.')) {
-        document.getElementById('registroForm').reset();
-        // Resetear contadores
-        document.querySelectorAll('input[maxlength]').forEach(input => {
-            const counterId = input.getAttribute('oninput')?.match(/'([^']+)'/)?.[1];
-            if (counterId) {
-                document.getElementById(counterId).textContent = '0';
-            }
-        });
-        // Resetear vista previa de privilegios
-        document.getElementById('privilegiosPreview').innerHTML = '<div class="text-center text-muted" id="privilegiosPlaceholder"><i class="fas fa-info-circle"></i> Seleccione un tipo de usuario</div>';
-        document.getElementById('privilegios').value = 'eleccione un tipo de usuario';
-    }
-}
-
 // Validación de teléfono en tiempo real
 document.querySelector('input[name="telefono"]')?.addEventListener('input', function(e) {
     this.value = this.value.replace(/[^0-9]/g, '');
+});
+
+// Desactivar completamente el autocomplete en todo el formulario
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('registroForm');
+    if (form) {
+        // Forzar autocomplete off en todos los inputs
+        form.querySelectorAll('input').forEach(input => {
+            input.setAttribute('autocomplete', 'off');
+        });
+    }
 });
 </script>
 @endpush

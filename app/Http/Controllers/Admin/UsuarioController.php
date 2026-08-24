@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Helpers\PrivilegiosHelper;
 use App\Helpers\PasswordHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -22,11 +21,11 @@ class UsuarioController extends Controller
         return view('administrador.administracion-usuarios.index');
     }
 
-    public function create()
+        public function create()
     {
-        // Verificación extra
-        if (!PrivilegiosHelper::puedeEditar(Auth::user())) {
-            abort(403, 'No tienes permiso para registrar usuarios.');
+        // Solo administradores pueden registrar usuarios
+        if (!Auth::user()->isAdmin()) {
+            abort(403, 'Acceso denegado. Solo administradores.');
         }
         
         return view('administrador.administracion-usuarios.registro');
@@ -34,9 +33,9 @@ class UsuarioController extends Controller
 
     public function store(Request $request)
     {
-        // Verificar si tiene privilegio G en posición 0
-        if (Auth::user()->privilegios[0] !== 'G') {
-            abort(403, 'No tienes permiso para registrar usuarios.');
+        // Verificar que el usuario actual es administrador
+        if (!Auth::user()->isAdmin()) {
+            abort(403, 'Acceso denegado. Solo administradores.');
         }
 
         $request->validate([
@@ -47,12 +46,11 @@ class UsuarioController extends Controller
             'email_institucional' => 'required|email|max:50|unique:users',
             'telefono' => 'required|string|size:10',
             'num_empleado' => 'required|integer|unique:users',
-            'tipo' => 'required|in:Administrador,Directivo,Docente,Trabajo Social',
+            'tipo' => ['required', Rule::in(['Administrador', 'Docente'])],
             'current_password' => 'required|current_password',
         ]);
 
         $passwordTemp = PasswordHelper::generateTemporaryPassword();
-        $privilegios = PasswordHelper::getDefaultPrivilegios($request->tipo);
 
         $user = User::create([
             'nombre' => $request->nombre,
@@ -65,7 +63,6 @@ class UsuarioController extends Controller
             'password' => Hash::make($passwordTemp),
             'pw_temporal' => true,
             'tipo' => $request->tipo,
-            'privilegios' => $privilegios,
             'estatus' => true,
         ]);
 
@@ -82,8 +79,8 @@ class UsuarioController extends Controller
 
     public function consulta(Request $request)
     {
-        if (!PrivilegiosHelper::puedeConsultar(Auth::user())) {
-            abort(403, 'No tienes permiso para consultar usuarios.');
+        if (!Auth::user()->isAdmin()) {
+            abort(403, 'Acceso denegado. Solo administradores.');
         }
 
         $query = User::query();
@@ -138,9 +135,8 @@ class UsuarioController extends Controller
 
     public function updateBulk(Request $request)
     {
-        // Verificar si tiene privilegio G en posición 0 para editar
-        if (Auth::user()->privilegios[0] !== 'G') {
-            return response()->json(['error' => 'No tienes permiso para editar usuarios.'], 403);
+        if (!Auth::user()->isAdmin()) {
+            return response()->json(['error' => 'No tienes permiso.'], 403);
         }
 
         $request->validate([
@@ -202,9 +198,8 @@ class UsuarioController extends Controller
 
     public function destroy(Request $request, $id)
     {
-        // Verificar si tiene privilegio G en posición 0 para eliminar
-        if (Auth::user()->privilegios[0] !== 'G') {
-            return response()->json(['error' => 'No tienes permiso para eliminar usuarios.'], 403);
+        if (!Auth::user()->isAdmin()) {
+            return response()->json(['error' => 'No tienes permiso.'], 403);
         }
 
         $request->validate([
@@ -234,6 +229,10 @@ class UsuarioController extends Controller
     // Búsqueda de usuarios para la vista de seguridad
     public function buscarParaSeguridad(Request $request)
     {
+        if (!Auth::user()->isAdmin()) {
+            return response()->json(['error' => 'No tienes permiso.'], 403);
+        }
+
         $request->validate([
             'busqueda' => 'required|string|min:2'
         ]);
@@ -260,7 +259,6 @@ class UsuarioController extends Controller
                     'email_institucional' => $user->email_institucional,
                     'tipo' => $user->tipo,
                     'estatus' => $user->estatus,
-                    'privilegios' => $user->privilegios,
                     'pw_temporal' => $user->pw_temporal
                 ];
             })
@@ -270,6 +268,10 @@ class UsuarioController extends Controller
     // Obtener datos completos de un usuario específico
     public function obtenerUsuarioSeguridad($id)
     {
+        if (!Auth::user()->isAdmin()) {
+            return response()->json(['error' => 'No tienes permiso.'], 403);
+        }
+
         $user = User::findOrFail($id);
         
         return response()->json([
@@ -282,9 +284,7 @@ class UsuarioController extends Controller
                 'email_institucional' => $user->email_institucional,
                 'tipo' => $user->tipo,
                 'estatus' => $user->estatus,
-                'privilegios' => $user->privilegios,
-                'pw_temporal' => $user->pw_temporal,
-                'privilegios_array' => str_split($user->privilegios ?? 'NNNNN')
+                'pw_temporal' => $user->pw_temporal
             ]
         ]);
     }
@@ -292,12 +292,15 @@ class UsuarioController extends Controller
     // Guardar cambios de seguridad
     public function guardarSeguridad(Request $request)
     {
+        if (!Auth::user()->isAdmin()) {
+            return response()->json(['error' => 'No tienes permiso.'], 403);
+        }
+
         $request->validate([
             'current_password' => 'required|current_password',
             'user_id' => 'required|exists:users,id',
             'tipo' => 'sometimes|in:Administrador,Directivo,Docente,Trabajo Social',
             'estatus' => 'sometimes|boolean',
-            'privilegios' => 'sometimes|string|size:5|regex:/^[GNC]{5}$/',
             'generar_password_temporal' => 'sometimes|boolean',
             'email_destino' => 'required_if:generar_password_temporal,true|email|nullable'
         ]);
@@ -310,24 +313,12 @@ class UsuarioController extends Controller
         if ($request->has('tipo') && $request->tipo !== $user->tipo) {
             $user->tipo = $request->tipo;
             $cambios[] = 'tipo de usuario';
-            
-            // Si no se especificaron privilegios, actualizar a los por defecto del nuevo tipo
-            if (!$request->has('privilegios')) {
-                $user->privilegios = PasswordHelper::getDefaultPrivilegios($request->tipo);
-                $cambios[] = 'privilegios (por defecto)';
-            }
         }
 
         // Actualizar estatus
         if ($request->has('estatus') && $request->estatus != $user->estatus) {
             $user->estatus = $request->estatus;
             $cambios[] = 'estatus';
-        }
-
-        // Actualizar privilegios (si se enviaron explícitamente)
-        if ($request->has('privilegios') && $request->privilegios !== $user->privilegios) {
-            $user->privilegios = $request->privilegios;
-            $cambios[] = 'privilegios';
         }
 
         // Generar nueva contraseña temporal
@@ -365,7 +356,6 @@ class UsuarioController extends Controller
             'usuario' => [
                 'tipo' => $user->tipo,
                 'estatus' => $user->estatus,
-                'privilegios' => $user->privilegios,
                 'pw_temporal' => $user->pw_temporal
             ]
         ]);

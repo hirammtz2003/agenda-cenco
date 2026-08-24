@@ -1,12 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Consulta y Edición de Usuarios - SGGDI')
+@section('title', 'Consulta y Edición de Usuarios - SADHCC')
 
 @php
-    use App\Helpers\PrivilegiosHelper;
-    $usuarioActual = Auth::user();
-    $puedeEditar = PrivilegiosHelper::puedeEditar($usuarioActual);
-    $puedeConsultar = PrivilegiosHelper::puedeConsultar($usuarioActual);
+    $usuario = Auth::user();
+    $esAdmin = $usuario && $usuario->tipo === 'Administrador';
     
     $breadcrumbs = [
         [
@@ -90,11 +88,12 @@
         margin-bottom: 0.5rem;
         display: inline-block;
     }
-    .privilegios-container {
-        max-width: 300px;
-    }
     .action-buttons {
         white-space: nowrap;
+    }
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
     }
 </style>
 @endpush
@@ -114,11 +113,6 @@
         </div>
     </div>
     
-    @if(!$puedeConsultar)
-        <div class="alert alert-danger">
-            <i class="fas fa-exclamation-triangle"></i> No tienes permisos para consultar usuarios.
-        </div>
-    @else
     <!-- Filtros y búsqueda -->
     <div class="module-section">
         <form method="GET" action="{{ route('admin.usuarios.consulta') }}" id="filterForm">
@@ -128,7 +122,8 @@
                     <div class="input-group">
                         <input type="text" name="busqueda" class="form-control" 
                             placeholder="Nombre, apellidos, email, num. empleado..." 
-                            value="{{ request('busqueda') }}">
+                            value="{{ request('busqueda') }}"
+                            autocomplete="off">
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-search"></i>
                         </button>
@@ -144,9 +139,7 @@
                     <select name="tipo" class="form-select" onchange="document.getElementById('filterForm').submit()">
                         <option value="todos" {{ request('tipo') == 'todos' ? 'selected' : '' }}>—Todos los tipos—</option>
                         <option value="Administrador" {{ request('tipo') == 'Administrador' ? 'selected' : '' }}>Administrador</option>
-                        <option value="Directivo" {{ request('tipo') == 'Directivo' ? 'selected' : '' }}>Directivo</option>
                         <option value="Docente" {{ request('tipo') == 'Docente' ? 'selected' : '' }}>Docente</option>
-                        <option value="Trabajo Social" {{ request('tipo') == 'Trabajo Social' ? 'selected' : '' }}>Trabajo Social</option>
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -197,23 +190,20 @@
             <input type="hidden" name="current_password" id="current_password_hidden">
 
             <!-- Tabla de Usuarios con scroll -->
-            <div class="table-container mb-5">
+            <div class="table-container mb-3">
                 <table class="table table-hover mb-0">
                     <thead class="table-dark">
                         <tr>
-                            <th>Núm. Empleado</th>
-                            <th>Nombre(s)</th>
-                            <th>Primer Apellido</th>
-                            <th>Segundo Apellido</th>
-                            <th>Email Personal</th>
-                            <th>Email Institucional</th>
-                            <th>Teléfono</th>                            
-                            <th>Tipo</th>
-                            <th>Privilegios</th>
-                            <th>Estatus</th>
-                            @if($puedeEditar)
-                                <th>Acciones</th>
-                            @endif
+                            <th style="min-width: 80px;">Núm. Empleado</th>
+                            <th style="min-width: 100px;">Nombre(s)</th>
+                            <th style="min-width: 100px;">Primer Apellido</th>
+                            <th style="min-width: 100px;">Segundo Apellido</th>
+                            <th style="min-width: 150px;">Email Personal</th>
+                            <th style="min-width: 150px;">Email Institucional</th>
+                            <th style="min-width: 100px;">Teléfono</th>                            
+                            <th style="min-width: 120px;">Tipo</th>
+                            <th style="min-width: 80px;">Estatus</th>
+                            <th style="min-width: 150px;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -222,78 +212,45 @@
                                 <td>
                                     <span class="editable-field" data-field="num_empleado">{{ $user->num_empleado }}</span>
                                     <input type="number" class="edit-input" data-field="num_empleado" 
-                                           value="{{ $user->num_empleado }}">
+                                           value="{{ $user->num_empleado }}" autocomplete="off">
                                 </td>
                                 <td>
                                     <span class="editable-field" data-field="nombre">{{ $user->nombre }}</span>
                                     <input type="text" class="edit-input" data-field="nombre" 
-                                           value="{{ $user->nombre }}" maxlength="30">
+                                           value="{{ $user->nombre }}" maxlength="30" autocomplete="off">
                                 </td>
                                 <td>
                                     <span class="editable-field" data-field="apellido1">{{ $user->apellido1 }}</span>
                                     <input type="text" class="edit-input" data-field="apellido1" 
-                                           value="{{ $user->apellido1 }}" maxlength="20">
+                                           value="{{ $user->apellido1 }}" maxlength="20" autocomplete="off">
                                 </td>
                                 <td>
                                     <span class="editable-field" data-field="apellido2">{{ $user->apellido2 ?? '—' }}</span>
                                     <input type="text" class="edit-input" data-field="apellido2" 
-                                           value="{{ $user->apellido2 }}" maxlength="20" placeholder="Opcional">
+                                           value="{{ $user->apellido2 }}" maxlength="20" placeholder="Opcional" autocomplete="off">
                                 </td>
                                 <td>
                                     <span class="editable-field" data-field="email_personal">{{ $user->email_personal }}</span>
                                     <input type="email" class="edit-input" data-field="email_personal" 
-                                           value="{{ $user->email_personal }}" maxlength="50">
+                                           value="{{ $user->email_personal }}" maxlength="50" autocomplete="off">
                                 </td>
                                 <td>
                                     <span class="editable-field" data-field="email_institucional">{{ $user->email_institucional }}</span>
                                     <input type="email" class="edit-input" data-field="email_institucional" 
-                                           value="{{ $user->email_institucional }}" maxlength="50">
+                                           value="{{ $user->email_institucional }}" maxlength="50" autocomplete="off">
                                 </td>
                                 <td>
                                     <span class="editable-field" data-field="telefono">{{ $user->telefono }}</span>
                                     <input type="tel" class="edit-input" data-field="telefono" 
-                                           value="{{ $user->telefono }}" maxlength="10" pattern="[0-9]{10}">
+                                           value="{{ $user->telefono }}" maxlength="10" pattern="[0-9]{10}" autocomplete="off">
                                 </td>                                
                                 <td>
-                                    <div class="col-md-9 info-value">
-                                        @php
-                                            $badgeClass = $user->tipo === 'Administrador' ? 'bg-danger' : 
-                                                        ($user->tipo === 'Directivo' ? 'bg-warning' : 
-                                                        ($user->tipo === 'Docente' ? 'bg-primary' : 'bg-info'));
-                                        @endphp
-                                        <span class="badge {{ $badgeClass }} badge-custom">
-                                            {{ $user->tipo }}
-                                        </span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="col-md-9 info-value">
-                                        @if($user->privilegios[0] == "G")
-                                            <span class="badge bg-primary">Administración general del Sistema</span>
-                                        @elseif($user->privilegios[0] == "C")
-                                            <span class="badge bg-primary">Sólo consulta de Usuarios</span>    
-                                        @endif
-                                                                                        
-                                        @if($user->privilegios[1] == "C")
-                                            <span class="badge bg-secondary">Sólo consulta general de Alumnos</span>
-                                        @elseif($user->privilegios[2] == "C")
-                                            <span class="badge bg-danger">Consulta por Grado</span>
-                                        @elseif($user->privilegios[3] == "C")
-                                            <span class="badge bg-warning">Consulta por Grupo</span>
-                                        @elseif($user->privilegios[4] == "C")
-                                            <span class="badge bg-success">Consulta individual de Alumnos</span>
-                                        @endif
-
-                                        @if($user->privilegios[1] == "G")
-                                            <span class="badge bg-secondary">Gestión general de Alumnos</span>
-                                        @elseif($user->privilegios[2] == "G")
-                                            <span class="badge bg-danger">Gestión por Grado</span>
-                                        @elseif($user->privilegios[3] == "G")
-                                            <span class="badge bg-warning">Gestión por Grupo</span>    
-                                        @elseif($user->privilegios[4] == "G")
-                                            <span class="badge bg-success">Gestión individual de Alumnos</span>                           
-                                        @endif 
-                                    </div>
+                                    @php
+                                        $badgeClass = $user->tipo === 'Administrador' ? 'bg-danger' : 'bg-primary';
+                                    @endphp
+                                    <span class="badge {{ $badgeClass }} badge-custom">
+                                        {{ $user->tipo }}
+                                    </span>
                                 </td>
                                 <td>
                                     @if($user->estatus)
@@ -302,24 +259,24 @@
                                         <span class="badge bg-danger">Inactivo</span>
                                     @endif
                                 </td>
-                                @if($puedeEditar)
+                                @if($esAdmin)
                                     <td class="action-buttons">
                                         <div class="btn-group" role="group">
                                             <button type="button" class="btn btn-sm btn-outline-primary edit-row-btn" 
-                                                    title="Editar">
+                                                    title="Editar usuario">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <button type="button" class="btn btn-sm btn-outline-success save-row-btn" 
-                                                    style="display:none;" title="Guardar">
+                                                    style="display:none;" title="Guardar cambios">
                                                 <i class="fas fa-check"></i>
                                             </button>
                                             <button type="button" class="btn btn-sm btn-outline-secondary cancel-row-btn" 
-                                                    style="display:none;" title="Cancelar">
+                                                    style="display:none;" title="Cancelar edición">
                                                 <i class="fas fa-times"></i>
                                             </button>
                                             @if($user->id !== Auth::id())
                                             <button type="button" class="btn btn-sm btn-outline-danger delete-row-btn" 
-                                                    title="Eliminar">
+                                                    title="Eliminar usuario">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                             @endif
@@ -329,7 +286,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ $puedeEditar ? 11 : 10 }}" class="text-center py-4">
+                                <td colspan="10" class="text-center py-4">
                                     <i class="fas fa-users fa-3x text-muted mb-3"></i>
                                     <h5 class="text-muted">No se encontraron usuarios</h5>
                                     <p class="text-muted">Intenta con otros filtros de búsqueda</p>
@@ -340,7 +297,7 @@
                 </table>
             </div>
 
-            @if($puedeEditar && $usuarios->isNotEmpty())
+            @if($esAdmin && $usuarios->isNotEmpty())
                 <!-- Panel de contraseña y guardado -->
                 <div class="row mt-4 pt-4 border-top">
                     <div class="col-md-4">
@@ -349,15 +306,15 @@
                         </label>
                         <div class="input-group">
                             <input type="password" 
-                                   class="form-control @error('current_password') is-invalid @enderror" 
+                                   class="form-control" 
                                    id="current_password" 
                                    placeholder="Ingrese su contraseña para guardar cambios"
-                                   required>
+                                   autocomplete="new-password">
                         </div>
                         <small class="text-muted">Requerida para confirmar cualquier modificación</small>
                     </div>
                     <div class="col-md-8 d-flex align-items-end justify-content-end">
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-2 flex-wrap">
                             <button type="button" class="btn btn-secondary" id="guardarTodosBtn" disabled>
                                 <i class="fas fa-save me-2"></i>Guardar Todos los Cambios
                             </button>
@@ -373,14 +330,13 @@
             @endif
         </form>
     </div>
-    @endif
 </div>
 @endsection
 
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    @if($puedeEditar)
+    @if($esAdmin)
     // Variables de estado
     let filasEnEdicion = new Set();
     const currentPasswordInput = document.getElementById('current_password');
@@ -388,9 +344,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelarTodoBtn = document.getElementById('cancelarTodoBtn');
     const bulkEditForm = document.getElementById('bulkEditForm');
 
+    // Función para limpiar el campo de contraseña
+    function limpiarPassword() {
+        currentPasswordInput.value = '';
+        actualizarBotonesGlobales();
+    }
+
     // Función para actualizar estado de botones globales
     function actualizarBotonesGlobales() {
         const hayEdiciones = filasEnEdicion.size > 0;
+        
         guardarTodosBtn.disabled = !hayEdiciones || !currentPasswordInput.value;
         cancelarTodoBtn.disabled = !hayEdiciones;
         
@@ -403,12 +366,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Validar contraseña en tiempo real
     currentPasswordInput.addEventListener('input', actualizarBotonesGlobales);
 
-    // Editar fila
+    // Editar fila (ahora permite múltiples)
     document.querySelectorAll('.edit-row-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const row = this.closest('.user-row');
             const rowId = row.dataset.id;
             
+            // Si ya está en edición, no hacer nada
             if (filasEnEdicion.has(rowId)) return;
             
             // Activar modo edición en la fila
@@ -420,11 +384,15 @@ document.addEventListener('DOMContentLoaded', function() {
             row.querySelector('.save-row-btn').style.display = 'inline-block';
             row.querySelector('.cancel-row-btn').style.display = 'inline-block';
             
+            // Deshabilitar botón de eliminar de esta fila
+            const deleteBtn = row.querySelector('.delete-row-btn');
+            if (deleteBtn) deleteBtn.disabled = true;
+            
             actualizarBotonesGlobales();
         });
     });
 
-    // Cancelar edición de fila
+    // Cancelar edición de fila individual
     document.querySelectorAll('.cancel-row-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const row = this.closest('.user-row');
@@ -435,8 +403,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const field = input.dataset.field;
                 const originalValue = input.defaultValue;
                 input.value = originalValue;
-                row.querySelector(`.editable-field[data-field="${field}"]`).textContent = 
-                    field.includes('email') ? originalValue : (originalValue || '-');
+                const span = row.querySelector(`.editable-field[data-field="${field}"]`);
+                if (span) {
+                    span.textContent = field.includes('email') ? originalValue : (originalValue || '—');
+                }
             });
             
             // Salir del modo edición
@@ -448,10 +418,9 @@ document.addEventListener('DOMContentLoaded', function() {
             row.querySelector('.save-row-btn').style.display = 'none';
             row.querySelector('.cancel-row-btn').style.display = 'none';
             
-            // Reactivar otros botones de edición si no hay filas en edición
-            if (filasEnEdicion.size === 0) {
-                document.querySelectorAll('.edit-row-btn').forEach(b => b.disabled = false);
-            }
+            // Reactivar botón de eliminar
+            const deleteBtn = row.querySelector('.delete-row-btn');
+            if (deleteBtn) deleteBtn.disabled = false;
             
             actualizarBotonesGlobales();
         });
@@ -505,7 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     row.querySelectorAll('.editable-field').forEach(span => {
                         const field = span.dataset.field;
                         const input = row.querySelector(`input[data-field="${field}"]`);
-                        span.textContent = input.value || '-';
+                        span.textContent = input.value || '—';
                     });
                     
                     // Salir del modo edición
@@ -516,14 +485,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     row.querySelector('.save-row-btn').style.display = 'none';
                     row.querySelector('.cancel-row-btn').style.display = 'none';
                     
-                    if (filasEnEdicion.size === 0) {
-                        document.querySelectorAll('.edit-row-btn').forEach(b => b.disabled = false);
-                    }
+                    const deleteBtn = row.querySelector('.delete-row-btn');
+                    if (deleteBtn) deleteBtn.disabled = false;
                     
-                    currentPasswordInput.value = '';
-                    actualizarBotonesGlobales();
+                    // Limpiar contraseña después de guardar
+                    limpiarPassword();
                     
-                    // Mostrar mensaje de éxito
                     alert(data.message || 'Usuario actualizado correctamente.');
                 } else {
                     alert('Error al guardar: ' + (data.error || 'Error desconocido'));
@@ -589,37 +556,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 filasEnEdicion.forEach(rowId => {
                     const row = document.getElementById(`user-${rowId}`);
                     if (row) {
-                        // Actualizar valores por defecto
                         row.querySelectorAll('.edit-input').forEach(input => {
                             input.defaultValue = input.value;
                         });
                         
-                        // Actualizar textos mostrados
                         row.querySelectorAll('.editable-field').forEach(span => {
                             const field = span.dataset.field;
                             const input = row.querySelector(`input[data-field="${field}"]`);
-                            span.textContent = input.value || '-';
+                            span.textContent = input.value || '—';
                         });
                         
-                        // Salir del modo edición
                         row.classList.remove('editing');
                         row.querySelector('.edit-row-btn').style.display = 'inline-block';
                         row.querySelector('.save-row-btn').style.display = 'none';
                         row.querySelector('.cancel-row-btn').style.display = 'none';
+                        
+                        const deleteBtn = row.querySelector('.delete-row-btn');
+                        if (deleteBtn) deleteBtn.disabled = false;
                     }
                 });
                 
                 filasEnEdicion.clear();
-                document.querySelectorAll('.edit-row-btn').forEach(b => b.disabled = false);
-                currentPasswordInput.value = '';
-                actualizarBotonesGlobales();
                 
-                alert(data.message || 'Cambios guardados correctamente.');
+                // Limpiar contraseña después de guardar
+                limpiarPassword();
                 
+                let mensaje = data.message || 'Cambios guardados correctamente.';
                 if (data.errors && data.errors.length > 0) {
-                    console.warn('Errores:', data.errors);
-                    alert('Algunos usuarios no pudieron actualizarse. Revisa la consola.');
+                    mensaje += '\n\nAdvertencias:\n' + data.errors.join('\n');
                 }
+                alert(mensaje);
             } else {
                 alert('Error al guardar: ' + (data.error || 'Error desconocido'));
             }
@@ -646,6 +612,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     input.value = input.defaultValue;
                 });
                 
+                row.querySelectorAll('.editable-field').forEach(span => {
+                    const field = span.dataset.field;
+                    const input = row.querySelector(`input[data-field="${field}"]`);
+                    span.textContent = input.defaultValue || '—';
+                });
+                
                 // Salir del modo edición
                 row.classList.remove('editing');
                 row.querySelector('.edit-row-btn').style.display = 'inline-block';
@@ -653,18 +625,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 row.querySelector('.cancel-row-btn').style.display = 'none';
                 
                 const deleteBtn = row.querySelector('.delete-row-btn');
-                if (deleteBtn) deleteBtn.disabled = true;
+                if (deleteBtn) deleteBtn.disabled = false;
             }
         });
         
         filasEnEdicion.clear();
-        document.querySelectorAll('.edit-row-btn').forEach(b => b.disabled = false);
-        actualizarBotonesGlobales();
+        
+        // Limpiar contraseña al cancelar todo
+        limpiarPassword();
     });
 
     // Eliminar usuario
     document.querySelectorAll('.delete-row-btn').forEach(btn => {
         btn.addEventListener('click', function() {
+            // Verificar si hay ediciones activas
+            if (filasEnEdicion.size > 0) {
+                alert('No puedes eliminar usuarios mientras haya ediciones pendientes. Guarda o cancela los cambios primero.');
+                return;
+            }
+            
             if (!currentPasswordInput.value) {
                 alert('Debes ingresar tu contraseña para eliminar.');
                 currentPasswordInput.focus();
@@ -694,9 +673,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.success) {
                     row.remove();
                     alert(data.message || 'Usuario eliminado correctamente.');
-                    
                     // Actualizar contador de resultados
-                    location.reload(); // Recargar para actualizar contadores
+                    const contador = document.querySelector('.filter-badge');
+                    if (contador) {
+                        const total = document.querySelectorAll('.user-row').length;
+                        contador.innerHTML = `<i class="fas fa-users"></i> ${total} usuario(s) encontrado(s)`;
+                    }
+                    // Limpiar contraseña después de eliminar
+                    limpiarPassword();
                 } else {
                     alert('Error al eliminar: ' + (data.error || 'Error desconocido'));
                 }
@@ -722,6 +706,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
     });
+    
+    // Inicializar
+    actualizarBotonesGlobales();
     @endif
 });
 </script>

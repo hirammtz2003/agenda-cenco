@@ -12,23 +12,23 @@ Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-// Recuperación de contraseña (pública)
+// Recuperación de contraseña
 Route::post('/recuperacion/validar', [App\Http\Controllers\Auth\RecuperacionController::class, 'validar'])
     ->name('recuperacion.validar');
 
-// ============ RUTAS PROTEGIDAS (Requieren autenticación) ============
+// ============ RUTAS PROTEGIDAS ============
 Route::middleware(['auth'])->group(function () {
     
-    // Página de inicio (welcome)
+    // Página de inicio
     Route::get('/', function () {
         return view('welcome');
     })->name('welcome');
     
-    // Perfil de usuario (todos pueden ver su perfil)
+    // Perfil de usuario
     Route::get('/perfil', [MiPerfilController::class, 'show'])->name('mi-perfil');
     Route::put('/perfil', [MiPerfilController::class, 'update'])->name('profile.update');
     
-    // ============ MÓDULOS DE RESERVA (Todos los usuarios autenticados) ============
+    // ============ MÓDULOS DE RESERVA ============
     Route::prefix('reservas')->name('reservas.')->group(function () {
         Route::get('/', [ReservaController::class, 'index'])->name('index');
         Route::get('/crear', [ReservaController::class, 'create'])->name('create');
@@ -40,10 +40,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/calendario', [ReservaController::class, 'calendario'])->name('calendario');
     });
     
-    // ============ MÓDULOS DE ADMINISTRACIÓN (SOLO ADMINISTRADORES) ============
+    // ============ MÓDULOS DE ADMINISTRACIÓN (SOLO ADMIN) ============
     Route::prefix('admin')->name('admin.')->middleware(['admin'])->group(function () {
         
-        // Menú principal de administración
         Route::get('/', function () {
             return redirect()->route('admin.usuarios.index');
         });
@@ -64,7 +63,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/guardar-seguridad', [UsuarioController::class, 'guardarSeguridad'])->name('guardar-seguridad');
         });
         
-        // Administración de Grupos (si los usas)
+        // Administración de Grupos
         Route::prefix('grupos')->name('grupos.')->group(function () {
             Route::get('/', [GrupoController::class, 'index'])->name('index');
             Route::get('/listar', [GrupoController::class, 'listar'])->name('listar');

@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Seguridad y Privilegios de Usuario - SGGDI')
+@section('title', 'Privilegios y Recuperación de Contraseñas - SADHCC')
 
 @php
-    use App\Helpers\PrivilegiosHelper;
-    $usuarioActual = Auth::user();
-
+    $usuario = Auth::user();
+    $esAdmin = $usuario && $usuario->tipo === 'Administrador';
+    
     $breadcrumbs = [
         [
             'name' => 'Inicio',
@@ -18,7 +18,7 @@
             'icon' => 'fa-users-cog'
         ],
         [
-            'name' => 'Seguridad y Privilegios de Usuario',
+            'name' => 'Privilegios y Recuperación de Contraseñas',
             'url' => null,
             'icon' => 'fa-solid fa-shield-alt'
         ]
@@ -75,38 +75,6 @@
         padding: 0.5rem;
         border-bottom: 1px solid #dee2e6;
     }
-    .privilegios-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    .privilegios-table th {
-        background-color: #343a40;
-        color: white;
-        padding: 10px;
-        text-align: center;
-    }
-    .privilegios-table td {
-        padding: 8px;
-        text-align: center;
-        border: 1px solid #dee2e6;
-    }
-    .privilegios-table td:first-child {
-        font-weight: 600;
-        background-color: #f8f9fa;
-        text-align: left;
-        padding-left: 15px;
-    }
-    .privilegios-table input[type="radio"] {
-        transform: scale(1.2);
-        cursor: pointer;
-    }
-    .privilegios-table input[type="radio"]:checked {
-        accent-color: #ffc107;
-    }
-    .privilegios-table input[type="radio"]:disabled {
-        cursor: not-allowed;
-        opacity: 0.5;
-    }
     .email-suggestions {
         position: absolute;
         top: 100%;
@@ -143,6 +111,7 @@
 @endpush
 
 @section('content')
+@if($esAdmin)
 <div class="container">
     <!-- Breadcrumb -->
     @include('partials.breadcrumb')
@@ -152,7 +121,7 @@
         <div class="col-12">
             <h2 class="border-bottom pb-3">
                 <i class="fa-solid fa-shield-alt me-2 text-warning"></i>
-                SEGURIDAD Y PRIVILEGIOS DE USUARIO
+                PRIVILEGIOS Y RECUPERACIÓN DE CONTRASEÑAS
             </h2>
         </div>
     </div>
@@ -167,9 +136,7 @@
                            id="busquedaInput" 
                            class="form-control" 
                            placeholder="Nombre, apellidos, número de empleado..."
-                           autocomplete="off"
-                           readonly
-                           onfocus="this.removeAttribute('readonly')">
+                           autocomplete="off">
                     <button class="btn btn-primary" type="button" id="btnBuscar">
                         <i class="fas fa-search"></i>
                     </button>
@@ -202,6 +169,20 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="row mb-2">
+                                <div class="col-md-4 info-label">Tipo actual:</div>
+                                <div class="col-md-8 info-value" id="displayTipoActual"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="row mb-2">
+                                <div class="col-md-4 info-label">Estatus actual:</div>
+                                <div class="col-md-8 info-value" id="displayEstatusActual"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -210,83 +191,30 @@
             @csrf
             <input type="hidden" name="user_id" id="userId">
 
-            <h5 class="mb-4"><i class="fa-solid fa-unlock-keyhole"></i> EDICIÓN DE TIPO, ESTATUS Y PRIVILEGIOS</h5>
+            <h5 class="mb-4"><i class="fa-solid fa-unlock-keyhole"></i> EDICIÓN DE TIPO Y ESTATUS</h5>
 
             <div class="row mb-4">
-                <div class="col-md-2">
-                    <label class="form-label">Tipo de Usuario</label>
+                <div class="col-md-3">
+                    <label class="form-label">Tipo de Usuario *</label>
                     <select name="tipo" id="tipoSelect" class="form-select" disabled>
                         <option value="">—Seleccione—</option>
                         <option value="Administrador">Administrador</option>
-                        <option value="Directivo">Directivo</option>
                         <option value="Docente">Docente</option>
-                        <option value="Trabajo Social">Trabajo Social</option>
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label">Estatus</label>
+                <div class="col-md-3">
+                    <label class="form-label">Estatus *</label>
                     <select name="estatus" id="estatusSelect" class="form-select" disabled>
                         <option value="">—Seleccione—</option>
                         <option value="1">Activo</option>
                         <option value="0">Inactivo</option>
                     </select>
                 </div>
-            </div>
-
-            <div class="row mb-4">
-                <div class="col-md-5">
-                    <label class="form-label">Privilegios</label>
-                    <table class="privilegios-table">
-                        <thead>
-                            <tr>
-                                <th>↓ Nivel \ Permiso →</th>
-                                <th>Restringido</th>
-                                <th>Consulta</th>
-                                <th>Gestión</th>
-                            </tr>
-                        </thead>
-                        <tbody id="privilegiosTableBody">
-                            @php
-                                $niveles = [
-                                    0 => 'Administración',
-                                    1 => 'General',
-                                    2 => 'Grado',
-                                    3 => 'Grupo',
-                                    4 => 'Individual'
-                                ];
-                            @endphp
-                            @foreach($niveles as $index => $nivel)
-                            <tr>
-                                <td>{{ $nivel }}</td>
-                                <td>
-                                    <input type="radio" 
-                                           name="privilegio_{{ $index }}" 
-                                           value="N"
-                                           data-nivel="{{ $index }}"
-                                           class="privilegio-radio"
-                                           disabled>
-                                </td>
-                                <td>
-                                    <input type="radio" 
-                                           name="privilegio_{{ $index }}" 
-                                           value="C"
-                                           data-nivel="{{ $index }}"
-                                           class="privilegio-radio"
-                                           disabled>
-                                </td>
-                                <td>
-                                    <input type="radio" 
-                                           name="privilegio_{{ $index }}" 
-                                           value="G"
-                                           data-nivel="{{ $index }}"
-                                           class="privilegio-radio"
-                                           disabled>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                    <input type="hidden" name="privilegios" id="privilegiosHidden">
+                <div class="col-md-6">
+                    <div class="alert alert-info mt-2">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <small>Cambiar el tipo de usuario modificará automáticamente sus privilegios de acceso.</small>
+                    </div>
                 </div>
             </div>
 
@@ -300,23 +228,22 @@
                             Habilitar nueva contraseña temporal
                         </label>
                     </div>
+                    <small class="text-muted">Al activar, se generará una nueva contraseña de 5 dígitos</small>
                 </div>
             </div>
 
             <div class="row mb-4" id="emailSection" style="display: none;">
                 <div class="col-md-6 position-relative">
-                    <label class="form-label">Email destinatario</label>
+                    <label class="form-label">Email destinatario *</label>
                     <input type="email" 
                            id="emailDestino"
                            name="email_destino" 
                            class="form-control"
                            placeholder="Ingrese el email para enviar la contraseña"
                            autocomplete="off"
-                           readonly
-                           onfocus="this.removeAttribute('readonly')"
                            disabled>
                     <div id="emailSuggestions" class="email-suggestions"></div>
-                    <small class="text-muted">Puede seleccionar de los emails del usuario o ingresar uno nuevo</small>
+                    <small class="text-muted">Seleccione uno de los emails del usuario o escriba uno nuevo</small>
                 </div>
             </div>
 
@@ -330,12 +257,12 @@
                            class="form-control" 
                            id="currentPassword" 
                            placeholder="Ingrese su contraseña para autorizar"
-                           required
+                           autocomplete="new-password"
                            disabled>
                     <small class="text-muted">Requerida para confirmar la operación</small>
                 </div>
                 <div class="col-md-8 d-flex align-items-end justify-content-end">
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 flex-wrap">
                         <button type="button" class="btn btn-warning" id="btnGuardar" disabled>
                             <i class="fas fa-save me-2"></i>Guardar Cambios
                         </button>
@@ -351,11 +278,20 @@
         </form>
     </div>
 </div>
+@else
+<div class="container mt-5">
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        Acceso denegado. Solo los administradores pueden acceder a esta sección.
+    </div>
+</div>
+@endif
 @endsection
 
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    @if($esAdmin)
     // Elementos del DOM
     const busquedaInput = document.getElementById('busquedaInput');
     const btnBuscar = document.getElementById('btnBuscar');
@@ -365,7 +301,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const userId = document.getElementById('userId');
     const tipoSelect = document.getElementById('tipoSelect');
     const estatusSelect = document.getElementById('estatusSelect');
-    const privilegiosHidden = document.getElementById('privilegiosHidden');
     const generarPasswordSwitch = document.getElementById('generarPasswordSwitch');
     const emailSection = document.getElementById('emailSection');
     const emailDestino = document.getElementById('emailDestino');
@@ -373,10 +308,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentPassword = document.getElementById('currentPassword');
     const btnGuardar = document.getElementById('btnGuardar');
     const btnCancelar = document.getElementById('btnCancelar');
-    const privilegioRadios = document.querySelectorAll('.privilegio-radio');
 
     let usuarioActual = null;
-    let privilegiosOriginales = null;
     let timeoutId = null;
     let resultadosBusqueda = [];
     let selectedResultIndex = -1;
@@ -387,7 +320,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function deshabilitarTodo() {
         tipoSelect.disabled = true;
         estatusSelect.disabled = true;
-        privilegioRadios.forEach(radio => radio.disabled = true);
         generarPasswordSwitch.disabled = true;
         emailDestino.disabled = true;
         currentPassword.disabled = true;
@@ -397,7 +329,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Limpiar valores
         tipoSelect.value = '';
         estatusSelect.value = '';
-        privilegioRadios.forEach(radio => radio.checked = false);
         generarPasswordSwitch.checked = false;
         emailDestino.value = '';
         currentPassword.value = '';
@@ -407,7 +338,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function habilitarTodo() {
         tipoSelect.disabled = false;
         estatusSelect.disabled = false;
-        privilegioRadios.forEach(radio => radio.disabled = false);
         generarPasswordSwitch.disabled = false;
         emailDestino.disabled = false;
         currentPassword.disabled = false;
@@ -456,6 +386,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 searchResults.innerHTML = '<div class="search-result-item">No se encontraron resultados</div>';
                 searchResults.style.display = 'block';
             }
+        })
+        .catch(error => {
+            console.error('Error en búsqueda:', error);
+            alert('Error al buscar usuarios.');
         });
     }
 
@@ -465,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const div = document.createElement('div');
             div.className = 'search-result-item';
             div.dataset.index = index;
-            div.innerHTML = `<strong>${user.nombre_completo}</strong>`;
+            div.innerHTML = `<strong>${user.nombre_completo}</strong> - ${user.num_empleado}`;
             div.addEventListener('click', () => seleccionarUsuario(user.id));
             searchResults.appendChild(div);
         });
@@ -517,6 +451,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 busquedaInput.value = usuarioActual.nombre_completo;
                 btnLimpiar.style.display = 'inline-block';
             }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar usuario.');
         });
     }
 
@@ -524,100 +462,23 @@ document.addEventListener('DOMContentLoaded', function() {
         userId.value = user.id;
         document.getElementById('displayNombreCompleto').textContent = user.nombre_completo;
         document.getElementById('displayNumEmpleado').textContent = user.num_empleado;
+        document.getElementById('displayTipoActual').innerHTML = 
+            `<span class="badge ${user.tipo === 'Administrador' ? 'bg-danger' : 'bg-primary'}">${user.tipo}</span>`;
+        document.getElementById('displayEstatusActual').innerHTML = 
+            user.estatus ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-danger">Inactivo</span>';
         
         tipoSelect.value = user.tipo;
         estatusSelect.value = user.estatus ? '1' : '0';
         
-        // Cargar privilegios
-        const privilegios = user.privilegios || 'NNNNN';
-        privilegiosOriginales = privilegios;
-        
-        for (let i = 0; i < 5; i++) {
-            const radios = document.getElementsByName(`privilegio_${i}`);
-            radios.forEach(radio => {
-                if (radio.value === privilegios[i]) {
-                    radio.checked = true;
-                }
-            });
-        }
-        
-        actualizarCadenaPrivilegios();
         usuarioSeleccionado.style.display = 'block';
     }
-
-    // Actualizar campo oculto con la cadena de privilegios
-    function actualizarCadenaPrivilegios() {
-        let cadena = '';
-        for (let i = 0; i < 5; i++) {
-            const radios = document.getElementsByName(`privilegio_${i}`);
-            let seleccionado = 'N';
-            radios.forEach(radio => {
-                if (radio.checked) {
-                    seleccionado = radio.value;
-                }
-            });
-            cadena += seleccionado;
-        }
-        privilegiosHidden.value = cadena;
-    }
-
-    // Función para propagar cambios a niveles inferiores
-    function propagarCambios(nivelInicio, valor) {
-        for (let i = nivelInicio + 1; i <= 4; i++) {
-            const radiosInferiores = document.getElementsByName(`privilegio_${i}`);
-            radiosInferiores.forEach(radio => {
-                if (radio.value === valor) {
-                    radio.checked = true;
-                }
-            });
-        }
-    }
-
-    // Event listeners para los radios
-    privilegioRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            const nivel = parseInt(this.dataset.nivel);
-            const valor = this.value;
-            
-            // Propagar a niveles inferiores SIEMPRE
-            propagarCambios(nivel, valor);
-            
-            actualizarCadenaPrivilegios();
-        });
-    });
-
-    // Cuando cambia el tipo, actualizar privilegios
-    tipoSelect.addEventListener('change', function() {
-        if (!usuarioActual) return;
-        
-        const nuevoTipo = this.value;
-        if (!nuevoTipo) return;
-        
-        const privilegiosDefault = {
-            'Administrador': 'GNNNN',
-            'Directivo': 'NCCCC',
-            'Docente': 'NNNCC',
-            'Trabajo Social': 'NNGGG'
-        };
-        
-        const nuevaCadena = privilegiosDefault[nuevoTipo];
-        for (let i = 0; i < 5; i++) {
-            const radios = document.getElementsByName(`privilegio_${i}`);
-            radios.forEach(radio => {
-                if (radio.value === nuevaCadena[i]) {
-                    radio.checked = true;
-                }
-            });
-        }
-        actualizarCadenaPrivilegios();
-    });
 
     // Switch de contraseña temporal
     generarPasswordSwitch.addEventListener('change', function() {
         if (this.checked && usuarioActual) {
             emailSection.style.display = 'block';
             emailDestino.value = usuarioActual.email_personal;
-            mostrarSugerenciasEmail('');
+            mostrarSugerenciasEmail(emailDestino.value);
         } else {
             emailSection.style.display = 'none';
             emailDestino.value = '';
@@ -628,10 +489,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function mostrarSugerenciasEmail(valor) {
         if (!usuarioActual) return;
         
-        const emails = [
-            usuarioActual.email_personal,
-            usuarioActual.email_institucional
-        ];
+        const emails = [];
+        if (usuarioActual.email_personal) emails.push(usuarioActual.email_personal);
+        if (usuarioActual.email_institucional) emails.push(usuarioActual.email_institucional);
         
         emailSuggestionsList = emails.filter(e => e.toLowerCase().includes(valor.toLowerCase()));
         
@@ -705,22 +565,34 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Validar campos
+        if (!tipoSelect.value) {
+            alert('Debe seleccionar un tipo de usuario.');
+            tipoSelect.focus();
+            return;
+        }
+
+        if (!estatusSelect.value) {
+            alert('Debe seleccionar un estatus.');
+            estatusSelect.focus();
+            return;
+        }
+
+        // Si se activó contraseña temporal, validar email
+        if (generarPasswordSwitch.checked && !emailDestino.value) {
+            alert('Debe especificar un email destinatario para la contraseña temporal.');
+            emailDestino.focus();
+            return;
+        }
+
         const formData = {
             current_password: currentPassword.value,
             user_id: userId.value,
-            tipo: tipoSelect.value || undefined,
+            tipo: tipoSelect.value,
             estatus: estatusSelect.value,
-            privilegios: privilegiosHidden.value,
             generar_password_temporal: generarPasswordSwitch.checked ? 1 : 0,
-            email_destino: emailDestino.value || undefined
+            email_destino: emailDestino.value || null
         };
-
-        // Remover undefined
-        Object.keys(formData).forEach(key => 
-            formData[key] === undefined && delete formData[key]
-        );
-
-        console.log('Enviando datos:', formData); // Para debugging
 
         fetch('{{ route("admin.usuarios.guardar-seguridad") }}', {
             method: 'POST',
@@ -732,17 +604,19 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
-            console.log('Respuesta:', data); // Para debugging
             if (data.success) {
                 alert(data.message);
-                if (data.detalles) {
+                if (data.detalles && data.detalles.length > 0) {
                     data.detalles.forEach(msg => alert(msg));
                 }
                 // Actualizar datos mostrados
                 if (data.usuario) {
                     usuarioActual.tipo = data.usuario.tipo;
                     usuarioActual.estatus = data.usuario.estatus;
-                    usuarioActual.privilegios = data.usuario.privilegios;
+                    document.getElementById('displayTipoActual').innerHTML = 
+                        `<span class="badge ${data.usuario.tipo === 'Administrador' ? 'bg-danger' : 'bg-primary'}">${data.usuario.tipo}</span>`;
+                    document.getElementById('displayEstatusActual').innerHTML = 
+                        data.usuario.estatus ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-danger">Inactivo</span>';
                 }
                 currentPassword.value = '';
                 generarPasswordSwitch.checked = false;
@@ -764,8 +638,9 @@ document.addEventListener('DOMContentLoaded', function() {
         busquedaInput.value = '';
         usuarioSeleccionado.style.display = 'none';
         deshabilitarTodo();
-        privilegiosHidden.value = '';
         btnLimpiar.style.display = 'none';
+        searchResults.style.display = 'none';
+        emailSuggestions.style.display = 'none';
     });
 
     // Cancelar edición
@@ -787,6 +662,7 @@ document.addEventListener('DOMContentLoaded', function() {
             searchResults.style.display = 'none';
         }
     });
+    @endif
 });
 </script>
 @endpush

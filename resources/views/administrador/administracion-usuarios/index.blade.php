@@ -103,14 +103,14 @@
                 </div>
             </div>
 
-            <!-- Seguridad y Privilegios de Usuarios -->
+            <!-- Privilegios y Recuperación de Contraseñas -->
             <div class="col-md-4">
                 <div class="card module-card bg-warning text-white">
                     <div class="card-body text-center">
                         <div class="module-icon">
                             <i class="fas fa-shield-alt"></i>
                         </div>
-                        <h5>Seguridad y Privilegios</h5>
+                        <h5>Privilegios y Recuperación de Contraseñas</h5>
                         <p class="small">Asigna privilegios y recuperación de cuenta</p>
                         <a href="{{ route('admin.usuarios.seguridad') }}" class="btn btn-light mt-2">
                             <i class="fas fa-arrow-right"></i> Acceder

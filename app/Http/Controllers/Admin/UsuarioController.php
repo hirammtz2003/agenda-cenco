@@ -223,7 +223,11 @@ class UsuarioController extends Controller
 
     public function seguridad()
     {
-        return view('administrador.administracion-usuarios.seguridad-privilegios');
+        if (!Auth::user()->isAdmin()) {
+            abort(403, 'Acceso denegado. Solo administradores.');
+        }
+        
+        return view('administrador.administracion-usuarios.privilegios-recuperacion');
     }
 
     // Búsqueda de usuarios para la vista de seguridad
@@ -241,11 +245,11 @@ class UsuarioController extends Controller
         
         $usuarios = User::where(function($query) use ($busqueda) {
             $query->where('nombre', 'LIKE', "%{$busqueda}%")
-                  ->orWhere('apellido1', 'LIKE', "%{$busqueda}%")
-                  ->orWhere('apellido2', 'LIKE', "%{$busqueda}%")
-                  ->orWhere('num_empleado', 'LIKE', "%{$busqueda}%")
-                  ->orWhere('email_personal', 'LIKE', "%{$busqueda}%")
-                  ->orWhere('email_institucional', 'LIKE', "%{$busqueda}%");
+                ->orWhere('apellido1', 'LIKE', "%{$busqueda}%")
+                ->orWhere('apellido2', 'LIKE', "%{$busqueda}%")
+                ->orWhere('num_empleado', 'LIKE', "%{$busqueda}%")
+                ->orWhere('email_personal', 'LIKE', "%{$busqueda}%")
+                ->orWhere('email_institucional', 'LIKE', "%{$busqueda}%");
         })->limit(10)->get();
 
         return response()->json([
@@ -253,7 +257,7 @@ class UsuarioController extends Controller
             'usuarios' => $usuarios->map(function($user) {
                 return [
                     'id' => $user->id,
-                    'nombre_completo' => $user->getNombreCompletoAttribute(),
+                    'nombre_completo' => $user->nombre_completo,
                     'num_empleado' => $user->num_empleado,
                     'email_personal' => $user->email_personal,
                     'email_institucional' => $user->email_institucional,
@@ -278,13 +282,13 @@ class UsuarioController extends Controller
             'success' => true,
             'usuario' => [
                 'id' => $user->id,
-                'nombre_completo' => $user->getNombreCompletoAttribute(),
+                'nombre_completo' => $user->nombre_completo,
                 'num_empleado' => $user->num_empleado,
                 'email_personal' => $user->email_personal,
                 'email_institucional' => $user->email_institucional,
                 'tipo' => $user->tipo,
-                'estatus' => $user->estatus,
-                'pw_temporal' => $user->pw_temporal
+                'estatus' => (bool) $user->estatus,
+                'pw_temporal' => (bool) $user->pw_temporal
             ]
         ]);
     }
@@ -299,44 +303,46 @@ class UsuarioController extends Controller
         $request->validate([
             'current_password' => 'required|current_password',
             'user_id' => 'required|exists:users,id',
-            'tipo' => 'sometimes|in:Administrador,Directivo,Docente,Trabajo Social',
-            'estatus' => 'sometimes|boolean',
+            'tipo' => ['required', Rule::in(['Administrador', 'Docente'])],
+            'estatus' => 'required|boolean',
             'generar_password_temporal' => 'sometimes|boolean',
-            'email_destino' => 'required_if:generar_password_temporal,true|email|nullable'
+            'email_destino' => 'nullable|email'
         ]);
 
         $user = User::findOrFail($request->user_id);
         $cambios = [];
         $mensajes = [];
 
-        // Actualizar tipo si viene en la solicitud
-        if ($request->has('tipo') && $request->tipo !== $user->tipo) {
+        // Actualizar tipo
+        if ($request->tipo !== $user->tipo) {
             $user->tipo = $request->tipo;
             $cambios[] = 'tipo de usuario';
         }
 
         // Actualizar estatus
-        if ($request->has('estatus') && $request->estatus != $user->estatus) {
+        if ((bool)$request->estatus !== (bool)$user->estatus) {
             $user->estatus = $request->estatus;
             $cambios[] = 'estatus';
         }
 
         // Generar nueva contraseña temporal
-        $passwordEnviada = null;
         if ($request->boolean('generar_password_temporal')) {
             $passwordTemp = PasswordHelper::generateTemporaryPassword();
             $user->password = Hash::make($passwordTemp);
             $user->pw_temporal = true;
             $cambios[] = 'contraseña temporal';
-            $passwordEnviada = $passwordTemp;
             
-            // Enviar email
-            try {
-                Mail::to($request->email_destino)->send(new PasswordTemporalMail($user, $passwordTemp));
-                $mensajes[] = "Email enviado a {$request->email_destino}";
-            } catch (\Exception $e) {
-                \Log::error('Error al enviar email: ' . $e->getMessage());
-                $mensajes[] = "No se pudo enviar el email, pero la contraseña se generó: {$passwordTemp}";
+            // Enviar email si se proporcionó destino
+            if ($request->email_destino) {
+                try {
+                    Mail::to($request->email_destino)->send(new PasswordTemporalMail($user, $passwordTemp));
+                    $mensajes[] = "Email enviado a {$request->email_destino}";
+                } catch (\Exception $e) {
+                    \Log::error('Error al enviar email: ' . $e->getMessage());
+                    $mensajes[] = "No se pudo enviar el email. Contraseña temporal: {$passwordTemp}";
+                }
+            } else {
+                $mensajes[] = "Contraseña temporal generada: {$passwordTemp}";
             }
         }
 
@@ -355,8 +361,8 @@ class UsuarioController extends Controller
             'detalles' => $mensajes,
             'usuario' => [
                 'tipo' => $user->tipo,
-                'estatus' => $user->estatus,
-                'pw_temporal' => $user->pw_temporal
+                'estatus' => (bool) $user->estatus,
+                'pw_temporal' => (bool) $user->pw_temporal
             ]
         ]);
     }

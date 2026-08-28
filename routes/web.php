@@ -17,7 +17,7 @@ Route::post('/recuperacion/validar', [App\Http\Controllers\Auth\RecuperacionCont
     ->name('recuperacion.validar');
 
 // ============ RUTAS PROTEGIDAS ============
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'verificar.password.temporal'])->group(function () {
     
     // Página de inicio
     Route::get('/', function () {

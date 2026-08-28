@@ -5,7 +5,6 @@
 @section('title', 'Mi Perfil - SGGDI')
 
 @php
-    use App\Helpers\PrivilegiosHelper;
     $usuarioActual = Auth::user();
 
     $breadcrumbs = [

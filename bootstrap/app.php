@@ -14,7 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Registrar middleware personalizados
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
-            // 'verificar.password.temporal' => \App\Http\Middleware\VerificarPasswordTemporal::class,
+            'verificar.password.temporal' => \App\Http\Middleware\VerificarPasswordTemporal::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

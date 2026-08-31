@@ -68,6 +68,7 @@ Route::middleware(['auth', 'verificar.password.temporal'])->group(function () {
             Route::get('/', [GrupoController::class, 'index'])->name('index');
             Route::get('/listar', [GrupoController::class, 'listar'])->name('listar');
             Route::post('/guardar', [GrupoController::class, 'guardar'])->name('guardar');
+            Route::get('/{id}', [GrupoController::class, 'obtener'])->name('obtener');
             Route::delete('/{id}', [GrupoController::class, 'eliminar'])->name('eliminar');
         });
     });

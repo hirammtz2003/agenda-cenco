@@ -103,15 +103,15 @@
                 </div>
                 @endif
 
-                <!-- Módulo de Gestión de Información de Alumnos -->
+                <!-- Módulo de * -->
                 <div class="col-md-4">
                     <div class="card module-card bg-danger text-white">
                         <div class="card-body text-center">
                             <div class="module-icon">
-                                <i class="fa-solid fa-folder-open"></i>
+                                
                             </div>
-                            <h5>Gestión de Información de Alumnos</h5>
-                            <p class="small">Gestiona los alumnos inscritos</p>
+                            <h5>*</h5>
+                            <p class="small">*</p>
                             <a href="#" class="btn btn-light mt-2">
                                 <i class="fas fa-arrow-right"></i> Acceder
                             </a>
@@ -119,15 +119,15 @@
                     </div>
                 </div>
 
-                <!-- Módulo de Configuración de Becas -->
+                <!-- Módulo de * -->
                 <div class="col-md-4">
                     <div class="card module-card bg-warning text-white">
                         <div class="card-body text-center">
                             <div class="module-icon">
-                                <i class="fa-solid fa-hand-holding-dollar"></i>
+                                
                             </div>
-                            <h5>Configuración de Becas</h5>
-                            <p class="small">Gestiona la información de becas disponibles</p>
+                            <h5>*</h5>
+                            <p class="small">*</p>
                             <a href="#" class="btn btn-light mt-2">
                                 <i class="fas fa-arrow-right"></i> Acceder
                             </a>
@@ -135,15 +135,15 @@
                     </div>
                 </div>
 
-                <!-- Módulo de Datos y Estadísticas -->
+                <!-- Módulo de * -->
                 <div class="col-md-4">
                     <div class="card module-card bg-info text-white">
                         <div class="card-body text-center">
                             <div class="module-icon">
-                                <i class="fa-solid fa-chart-column"></i>
+                                
                             </div>
-                            <h5>Datos y Estadísticas</h5>
-                            <p class="small">Realiza análisis de la información</p>
+                            <h5>*</h5>
+                            <p class="small">*</p>
                             <a href="#" class="btn btn-light mt-2">
                                 <i class="fas fa-arrow-right"></i> Acceder
                             </a>

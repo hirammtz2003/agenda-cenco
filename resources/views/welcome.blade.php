@@ -100,24 +100,24 @@
                             </a>
                         </div>
                     </div>
-                </div>
-                @endif
+                </div>                
 
-                <!-- Módulo de * -->
+                <!-- Módulo de Configuración de Materias y Laboratorios -->
                 <div class="col-md-4">
                     <div class="card module-card bg-danger text-white">
                         <div class="card-body text-center">
                             <div class="module-icon">
-                                
+                                <i class="fa-solid fa-laptop-file"></i>
                             </div>
-                            <h5>*</h5>
-                            <p class="small">*</p>
-                            <a href="#" class="btn btn-light mt-2">
+                            <h5>Configuración de Materias y Laboratorios</h5>
+                            <p class="small">Gestiona datos de materias y lugares de trabajo</p>
+                            <a href="{{ route('admin.materias.index') }}" class="btn btn-light mt-2">
                                 <i class="fas fa-arrow-right"></i> Acceder
                             </a>
                         </div>
                     </div>
                 </div>
+                @endif
 
                 <!-- Módulo de * -->
                 <div class="col-md-4">

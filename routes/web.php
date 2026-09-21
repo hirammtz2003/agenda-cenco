@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\MiPerfilController;
 use App\Http\Controllers\Admin\UsuarioController;
 use App\Http\Controllers\Admin\GrupoController;
+use App\Http\Controllers\Admin\MateriaLaboratorioController;
 use App\Http\Controllers\SolicitudController;
 
 // ============ RUTAS PÚBLICAS ============
@@ -66,6 +67,26 @@ Route::middleware(['auth', 'verificar.password.temporal'])->group(function () {
             Route::post('/guardar', [GrupoController::class, 'guardar'])->name('guardar');
             Route::get('/{id}', [GrupoController::class, 'obtener'])->name('obtener');
             Route::delete('/{id}', [GrupoController::class, 'eliminar'])->name('eliminar');
+        });
+
+        // Configuración de Materias y Laboratorios
+        Route::prefix('materias-lab')->name('materias.')->group(function () {
+            Route::get('/', [MateriaLaboratorioController::class, 'index'])->name('index');
+            
+            // Materias
+            Route::get('/materias/listar', [MateriaLaboratorioController::class, 'listarMaterias'])->name('listar');
+            Route::post('/materias/guardar', [MateriaLaboratorioController::class, 'guardarMateria'])->name('guardar');
+            Route::get('/materias/{id}', [MateriaLaboratorioController::class, 'obtenerMateria'])->name('obtener');
+            Route::delete('/materias/{id}', [MateriaLaboratorioController::class, 'eliminarMateria'])->name('eliminar');
+            
+            // Laboratorios
+            Route::get('/laboratorios/listar', [MateriaLaboratorioController::class, 'listarLaboratorios'])->name('lab.listar');
+            Route::post('/laboratorios/guardar', [MateriaLaboratorioController::class, 'guardarLaboratorio'])->name('lab.guardar');
+            Route::get('/laboratorios/{id}', [MateriaLaboratorioController::class, 'obtenerLaboratorio'])->name('lab.obtener');
+            Route::delete('/laboratorios/{id}', [MateriaLaboratorioController::class, 'eliminarLaboratorio'])->name('lab.eliminar');
+            
+            // Listado completo de laboratorios para el select de materias
+            Route::get('/laboratorios-para-select', [MateriaLaboratorioController::class, 'listarLaboratorios'])->name('lab.select');
         });
     });
 

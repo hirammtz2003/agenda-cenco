@@ -5,7 +5,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\MiPerfilController;
 use App\Http\Controllers\Admin\UsuarioController;
 use App\Http\Controllers\Admin\GrupoController;
-use App\Http\Controllers\ReservaController;
+use App\Http\Controllers\SolicitudController;
 
 // ============ RUTAS PÚBLICAS ============
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -28,16 +28,12 @@ Route::middleware(['auth', 'verificar.password.temporal'])->group(function () {
     Route::get('/perfil', [MiPerfilController::class, 'show'])->name('mi-perfil');
     Route::put('/perfil', [MiPerfilController::class, 'update'])->name('profile.update');
     
-    // ============ MÓDULOS DE RESERVA ============
-    Route::prefix('reservas')->name('reservas.')->group(function () {
-        Route::get('/', [ReservaController::class, 'index'])->name('index');
-        Route::get('/crear', [ReservaController::class, 'create'])->name('create');
-        Route::post('/store', [ReservaController::class, 'store'])->name('store');
-        Route::get('/{id}/editar', [ReservaController::class, 'edit'])->name('edit');
-        Route::put('/{id}', [ReservaController::class, 'update'])->name('update');
-        Route::delete('/{id}', [ReservaController::class, 'destroy'])->name('destroy');
-        Route::get('/mis-reservas', [ReservaController::class, 'misReservas'])->name('mis-reservas');
-        Route::get('/calendario', [ReservaController::class, 'calendario'])->name('calendario');
+    // ============ SOLICITUD DE RESERVA ============
+    Route::prefix('solicitud')->name('solicitud.')->group(function () {
+        Route::get('/', [SolicitudController::class, 'index'])->name('index');
+        Route::post('/store', [SolicitudController::class, 'store'])->name('store');
+        Route::get('/buscar/materias', [SolicitudController::class, 'buscarMaterias'])->name('buscar.materias');
+        Route::get('/buscar/grupos', [SolicitudController::class, 'buscarGrupos'])->name('buscar.grupos');
     });
     
     // ============ MÓDULOS DE ADMINISTRACIÓN (SOLO ADMIN) ============
@@ -72,4 +68,6 @@ Route::middleware(['auth', 'verificar.password.temporal'])->group(function () {
             Route::delete('/{id}', [GrupoController::class, 'eliminar'])->name('eliminar');
         });
     });
+
+    
 });

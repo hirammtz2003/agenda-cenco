@@ -15,12 +15,14 @@ class Grupo extends Model
         'semestre',
         'grupo',
         'carrera',
+        'ciclo_escolar'
     ];
 
     public $timestamps = false;
 
     public function getNombreCompletoAttribute()
     {
-        return "{$this->semestre} {$this->grupo} - {$this->carrera}";
+        return "{$this->semestre} {$this->grupo} - {$this->carrera}" . 
+               ($this->ciclo_escolar ? " ({$this->ciclo_escolar})" : '');
     }
 }

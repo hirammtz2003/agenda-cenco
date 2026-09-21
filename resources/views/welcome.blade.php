@@ -124,11 +124,11 @@
                     <div class="card module-card bg-warning text-white">
                         <div class="card-body text-center">
                             <div class="module-icon">
-                                
+                                <i class="fa-solid fa-pen-to-square"></i>
                             </div>
-                            <h5>*</h5>
-                            <p class="small">*</p>
-                            <a href="#" class="btn btn-light mt-2">
+                            <h5>Solicitud de Reserva de Horas</h5>
+                            <p class="small">Formulario para apartados</p>
+                            <a href="{{ route('solicitud.index') }}" class="btn btn-light mt-2">
                                 <i class="fas fa-arrow-right"></i> Acceder
                             </a>
                         </div>

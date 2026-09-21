@@ -99,7 +99,7 @@
                         <option value="6°">6°</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Grupo *</label>
                     <select id="grupo" class="form-select" required>
                         <option value="">—Seleccione—</option>
@@ -107,7 +107,7 @@
                         <option value="B">B</option>
                     </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label">Carrera *</label>
                     <select id="carrera" class="form-select" required>
                         <option value="">—Seleccione—</option>
@@ -117,6 +117,16 @@
                         <option value="Ventas">Ventas</option>
                         <option value="Diseño Gráfico Digital">Diseño Gráfico Digital</option>
                     </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Ciclo Escolar</label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="ciclo_escolar" 
+                           placeholder="Ej: Agosto 2026-Enero 2027"
+                           maxlength="25"
+                           autocomplete="off">
+                    <small class="text-muted">Formato: Mes Año-Mes Año</small>
                 </div>
             </div>
 
@@ -156,8 +166,8 @@
         <h5 class="mb-4"><i class="fas fa-search"></i> CONSULTA DE GRUPOS</h5>
 
         <div class="row mb-3">
-            <div class="col-md-3">
-                <label class="form-label">Filtrar por semestre:</label>
+            <div class="col-md-2">
+                <label class="form-label">Semestre:</label>
                 <select id="filtroSemestre" class="form-select">
                     <option value="">—Todos—</option>
                     <option value="1°">1°</option>
@@ -168,16 +178,16 @@
                     <option value="6°">6°</option>
                 </select>
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Filtrar por grupo:</label>
+            <div class="col-md-2">
+                <label class="form-label">Grupo:</label>
                 <select id="filtroGrupo" class="form-select">
                     <option value="">—Todos—</option>
                     <option value="A">A</option>
                     <option value="B">B</option>
                 </select>
             </div>
-            <div class="col-md-4">
-                <label class="form-label">Filtrar por carrera:</label>
+            <div class="col-md-3">
+                <label class="form-label">Carrera:</label>
                 <select id="filtroCarrera" class="form-select">
                     <option value="">—Todas—</option>
                     <option value="Soporte y Mantenimiento de Equipo de Cómputo">Soporte y Mantenimiento de Equipo de Cómputo</option>
@@ -186,6 +196,15 @@
                     <option value="Ventas">Ventas</option>
                     <option value="Diseño Gráfico Digital">Diseño Gráfico Digital</option>
                 </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Ciclo Escolar:</label>
+                <input type="text" 
+                       id="filtroCicloEscolar" 
+                       class="form-control" 
+                       placeholder="Buscar ciclo escolar..."
+                       maxlength="25"
+                       autocomplete="off">
             </div>
             <div class="col-md-2 d-flex align-items-end">
                 <button class="btn btn-primary w-100" type="button" id="btnAplicarFiltros">
@@ -212,15 +231,16 @@
             <table class="table table-hover mb-0">
                 <thead class="table-dark">
                     <tr>
-                        <th style="width: 20%;">Semestre</th>
-                        <th style="width: 20%;">Grupo</th>
-                        <th style="width: 40%;">Carrera</th>
+                        <th style="width: 12%;">Semestre</th>
+                        <th style="width: 10%;">Grupo</th>
+                        <th style="width: 33%;">Carrera</th>
+                        <th style="width: 25%;">Ciclo Escolar</th>
                         <th style="width: 20%;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tablaGrupos">
                     <tr>
-                        <td colspan="4" class="text-center py-4">
+                        <td colspan="5" class="text-center py-4">
                             <i class="fas fa-users fa-3x text-muted mb-3"></i>
                             <h5 class="text-muted">Realice una búsqueda para ver resultados</h5>
                         </td>
@@ -249,6 +269,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const filtroSemestre = document.getElementById('filtroSemestre');
     const filtroGrupo = document.getElementById('filtroGrupo');
     const filtroCarrera = document.getElementById('filtroCarrera');
+    const filtroCicloEscolar = document.getElementById('filtroCicloEscolar');
     const btnAplicarFiltros = document.getElementById('btnAplicarFiltros');
     const btnLimpiarFiltros = document.getElementById('btnLimpiarFiltros');
     const tablaGrupos = document.getElementById('tablaGrupos');
@@ -260,6 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const semestre = document.getElementById('semestre');
     const grupo = document.getElementById('grupo');
     const carrera = document.getElementById('carrera');
+    const cicloEscolar = document.getElementById('ciclo_escolar');
     const currentPassword = document.getElementById('current_password');
     const btnGuardar = document.getElementById('btnGuardarGrupo');
     const btnCancelarEdicion = document.getElementById('btnCancelarEdicion');
@@ -271,7 +293,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const params = new URLSearchParams({
             semestre: filtroSemestre.value || '',
             grupo: filtroGrupo.value || '',
-            carrera: filtroCarrera.value || ''
+            carrera: filtroCarrera.value || '',
+            ciclo_escolar: filtroCicloEscolar.value || ''
         });
 
         fetch(`{{ route("admin.grupos.listar") }}?${params.toString()}`)
@@ -286,6 +309,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (filtroSemestre.value) filtrosTexto.push(`Semestre: ${filtroSemestre.value}`);
                 if (filtroGrupo.value) filtrosTexto.push(`Grupo: ${filtroGrupo.value}`);
                 if (filtroCarrera.value) filtrosTexto.push(`Carrera: ${filtroCarrera.value}`);
+                if (filtroCicloEscolar.value) filtrosTexto.push(`Ciclo: ${filtroCicloEscolar.value}`);
                 
                 if (filtrosTexto.length > 0) {
                     filtrosActivos.innerHTML = `<i class="fas fa-filter"></i> ${filtrosTexto.join(' | ')}`;
@@ -308,7 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (grupos.length === 0) {
             tablaGrupos.innerHTML = `
                 <tr>
-                    <td colspan="4" class="text-center py-4">
+                    <td colspan="5" class="text-center py-4">
                         <i class="fas fa-users fa-3x text-muted mb-3"></i>
                         <h5 class="text-muted">No se encontraron grupos</h5>
                         <p class="text-muted">Intente con otros filtros de búsqueda</p>
@@ -324,6 +348,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td><span class="badge bg-secondary">${g.semestre}</span></td>
                 <td><span class="badge bg-primary">${g.grupo}</span></td>
                 <td>${g.carrera}</td>
+                <td>${g.ciclo_escolar || '<span class="text-muted">—</span>'}</td>
                 <td class="action-buttons">
                     <div class="btn-group" role="group">
                         <button type="button" class="btn btn-sm btn-outline-primary editar-btn" title="Editar grupo">
@@ -360,8 +385,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Cargar grupo para editar
     function cargarGrupoParaEditar(id) {
-        console.log('Cargando grupo con ID:', id); // Debug
-        
         fetch(`{{ url('admin/grupos') }}/${id}`, {
             method: 'GET',
             headers: {
@@ -370,13 +393,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .then(response => {
-            console.log('Response status:', response.status); // Debug
-            console.log('Response headers:', response.headers); // Debug
-            
-            // Verificar si la respuesta es JSON
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
-                // Si no es JSON, leer como texto para ver el error
                 return response.text().then(text => {
                     console.error('Respuesta no JSON:', text);
                     throw new Error('La respuesta no es JSON. Error del servidor.');
@@ -385,21 +403,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
-            console.log('Datos recibidos:', data); // Debug
-            
             if (data.success) {
                 const g = data.grupo;
                 grupoId.value = g.id;
                 semestre.value = g.semestre;
                 grupo.value = g.grupo;
                 carrera.value = g.carrera;
+                cicloEscolar.value = g.ciclo_escolar || '';
                 
                 btnCancelarEdicion.style.display = 'inline-block';
                 
-                // Scroll al formulario
                 document.getElementById('formGrupo').scrollIntoView({ behavior: 'smooth' });
                 
-                // Cambiar texto del botón
                 btnGuardar.innerHTML = '<i class="fas fa-edit me-2"></i>Actualizar Grupo';
             } else {
                 alert('⚠️ ' + data.message);
@@ -429,10 +444,10 @@ document.addEventListener('DOMContentLoaded', function() {
             id: grupoId.value || null,
             semestre: semestre.value,
             grupo: grupo.value,
-            carrera: carrera.value
+            carrera: carrera.value,
+            ciclo_escolar: cicloEscolar.value || null
         };
 
-        // Deshabilitar botón
         btnGuardar.disabled = true;
         const originalText = btnGuardar.innerHTML;
         btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Guardando...';
@@ -441,7 +456,8 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
             },
             body: JSON.stringify(data)
         })
@@ -477,7 +493,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Deshabilitar botón específico
         const deleteBtn = event?.target?.closest('.eliminar-btn');
         if (deleteBtn) {
             deleteBtn.disabled = true;
@@ -488,7 +503,8 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
             },
             body: JSON.stringify({ current_password: currentPassword.value })
         })
@@ -496,7 +512,6 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 alert(data.message);
-                // Limpiar contraseña
                 currentPassword.value = '';
                 listarGrupos();
             } else {
@@ -521,6 +536,7 @@ document.addEventListener('DOMContentLoaded', function() {
         semestre.value = '';
         grupo.value = '';
         carrera.value = '';
+        cicloEscolar.value = '';
         currentPassword.value = '';
         btnCancelarEdicion.style.display = 'none';
         btnGuardar.innerHTML = '<i class="fas fa-save me-2"></i>Guardar Grupo';
@@ -542,6 +558,7 @@ document.addEventListener('DOMContentLoaded', function() {
         filtroSemestre.value = '';
         filtroGrupo.value = '';
         filtroCarrera.value = '';
+        filtroCicloEscolar.value = '';
         listarGrupos();
     });
 
@@ -549,7 +566,7 @@ document.addEventListener('DOMContentLoaded', function() {
     listarGrupos();
 
     // Enter en los campos de filtro
-    document.querySelectorAll('#filtroSemestre, #filtroGrupo, #filtroCarrera').forEach(input => {
+    document.querySelectorAll('#filtroSemestre, #filtroGrupo, #filtroCarrera, #filtroCicloEscolar').forEach(input => {
         input.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -564,11 +581,6 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             guardarGrupo();
         }
-    });
-
-    // Limpiar contraseña en la vista
-    currentPassword.addEventListener('input', function() {
-        // Este evento se mantiene por si se necesita
     });
 
     // ===== FUNCIÓN GLOBAL =====

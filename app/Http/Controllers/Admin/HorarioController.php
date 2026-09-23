@@ -116,6 +116,34 @@ class HorarioController extends Controller
         }
     }
 
+    public function listarMateriasPorLaboratorio(Request $request)
+    {
+        try {
+            if (!Auth::user()->isAdmin()) {
+                return response()->json(['success' => false, 'message' => 'Sin permisos'], 403);
+            }
+
+            $idLaboratorio = $request->get('id_laboratorio');
+
+            $query = \App\Models\Materia::query();
+
+            if ($idLaboratorio) {
+                // Si se especifica laboratorio, mostrar solo materias de ese laboratorio
+                $query->where('id_laboratorio', $idLaboratorio);
+            }
+            // Si no se especifica, se muestran todas las materias
+
+            $materias = $query->orderBy('nombre')->get(['id', 'nombre']);
+
+            return response()->json([
+                'success' => true,
+                'materias' => $materias
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     // ============ HORARIOS ============
 
     public function listarHorarios(Request $request)

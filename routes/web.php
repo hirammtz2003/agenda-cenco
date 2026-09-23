@@ -99,20 +99,25 @@ Route::middleware(['auth', 'verificar.password.temporal'])->group(function () {
             Route::get('/buscar/maestros', [HorarioController::class, 'buscarMaestros'])->name('buscar.maestros');
             Route::get('/buscar/materias', [HorarioController::class, 'buscarMaterias'])->name('buscar.materias');
             
-            // Horarios
+            // ⚠️ RUTAS ESPECÍFICAS PRIMERO (antes de /{id})
             Route::get('/listar', [HorarioController::class, 'listarHorarios'])->name('listar');
             Route::post('/guardar', [HorarioController::class, 'guardarHorario'])->name('guardar');
-            Route::get('/{id}', [HorarioController::class, 'obtenerHorario'])->name('obtener');
-            Route::delete('/{id}', [HorarioController::class, 'eliminarHorario'])->name('eliminar');
             Route::get('/laboratorios/listar', [HorarioController::class, 'listarLaboratorios'])->name('laboratorios.listar');
+            Route::get('/materias-por-laboratorio', [HorarioController::class, 'listarMateriasPorLaboratorio'])->name('materias.por.laboratorio');
             
-            // Días inhábiles
+            // Días inhábiles (rutas específicas)
             Route::get('/dias/listar', [HorarioController::class, 'listarDias'])->name('dias.listar');
             Route::post('/dias/guardar', [HorarioController::class, 'guardarDia'])->name('dias.guardar');
             Route::get('/dias/{id}', [HorarioController::class, 'obtenerDia'])->name('dias.obtener');
             Route::delete('/dias/{id}', [HorarioController::class, 'eliminarDia'])->name('dias.eliminar');
+            
+            // ⚠️ RUTAS CON PARÁMETRO AL FINAL (con restricción numérica)
+            Route::get('/{id}', [HorarioController::class, 'obtenerHorario'])
+                ->where('id', '[0-9]+')
+                ->name('obtener');
+            Route::delete('/{id}', [HorarioController::class, 'eliminarHorario'])
+                ->where('id', '[0-9]+')
+                ->name('eliminar');
         });
-    });
-
-    
+    });    
 });

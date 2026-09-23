@@ -211,29 +211,6 @@
                         </div>
                     </div>
 
-                    <!-- Materia con autocomplete -->
-                    <div class="row mb-3">
-                        <div class="col-md-6 position-relative">
-                            <label class="form-label">Materia *</label>
-                            <input type="text" 
-                                   id="buscarMateria"
-                                   class="form-control"
-                                   placeholder="Escriba el nombre de la materia..."
-                                   autocomplete="off">
-                            <input type="hidden" id="horarioMateriaId" value="">
-                            <div id="materiaResults" class="search-results-dropdown"></div>
-                            <small class="text-muted">Comience a escribir para buscar</small>
-                        </div>
-                        <div class="col-md-6 d-flex align-items-end">
-                            <div id="materiaSeleccionada" style="display:none;" class="w-100">
-                                <div class="alert alert-info mb-0 py-2">
-                                    <i class="fas fa-check-circle me-2"></i>
-                                    <strong id="materiaNombreDisplay"></strong>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Laboratorio (select dinámico) -->
                     <div class="row mb-3">
                         <div class="col-md-6">
@@ -241,7 +218,18 @@
                             <select id="horarioLaboratorio" class="form-select">
                                 <option value="">—Ninguno—</option>
                             </select>
-                            <small class="text-muted">Seleccione el laboratorio donde se llevará a cabo</small>
+                            <small class="text-muted">Al seleccionar un laboratorio se filtrarán las materias disponibles</small>
+                        </div>
+                    </div>
+
+                    <!-- Materia (select dinámico filtrado por laboratorio) -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Materia *</label>
+                            <select id="horarioMateria" class="form-select">
+                                <option value="">—Seleccione un laboratorio primero—</option>
+                            </select>
+                            <small class="text-muted">Solo se muestran materias del laboratorio seleccionado</small>
                         </div>
                     </div>
 
@@ -507,12 +495,11 @@ function limpiarFormHorario() {
     document.getElementById('horarioGrupoId').value = '';
     document.getElementById('buscarMaestro').value = '';
     document.getElementById('horarioMaestroId').value = '';
-    document.getElementById('buscarMateria').value = '';
-    document.getElementById('horarioMateriaId').value = '';
+    document.getElementById('horarioMateria').innerHTML = '<option value="">—Seleccione un laboratorio primero—</option>';
+    document.getElementById('horarioLaboratorio').value = '';
     document.getElementById('horarioPassword').value = '';
     document.getElementById('grupoSeleccionado').style.display = 'none';
     document.getElementById('maestroSeleccionado').style.display = 'none';
-    document.getElementById('materiaSeleccionada').style.display = 'none';
     document.getElementById('horarioLaboratorio').value = '';
     document.getElementById('btnCancelarHorario').style.display = 'none';
     document.getElementById('btnGuardarHorario').innerHTML = '<i class="fas fa-save me-1"></i>Guardar Horario';
@@ -544,12 +531,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const maestroResults = document.getElementById('maestroResults');
     const maestroSeleccionado = document.getElementById('maestroSeleccionado');
     const maestroNombreDisplay = document.getElementById('maestroNombreDisplay');
-    const buscarMateria = document.getElementById('buscarMateria');
-    const horarioMateriaId = document.getElementById('horarioMateriaId');
     const horarioLaboratorio = document.getElementById('horarioLaboratorio');
-    const materiaResults = document.getElementById('materiaResults');
-    const materiaSeleccionada = document.getElementById('materiaSeleccionada');
-    const materiaNombreDisplay = document.getElementById('materiaNombreDisplay');
+    const horarioMateria = document.getElementById('horarioMateria');
     const horarioPassword = document.getElementById('horarioPassword');
     const btnGuardarHorario = document.getElementById('btnGuardarHorario');
     const btnCancelarHorario = document.getElementById('btnCancelarHorario');
@@ -615,14 +598,8 @@ document.addEventListener('DOMContentLoaded', function() {
         maestroSeleccionado.style.display = 'block';
     }, '{{ route("admin.horarios.buscar.maestros") }}');
 
-    setupAutocomplete(buscarMateria, materiaResults, (id, nombre) => {
-        horarioMateriaId.value = id;
-        buscarMateria.value = nombre;
-        materiaNombreDisplay.textContent = nombre;
-        materiaSeleccionada.style.display = 'block';
-    }, '{{ route("admin.horarios.buscar.materias") }}');
-
     cargarLaboratorios();
+    cargarMaterias(null);
     listarHorarios();
     listarDias();
 
@@ -713,22 +690,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 horarioDia.value = h.dia;
                 horarioHoraFija.checked = h.hora_fija;
                 
+                // Grupo
                 horarioGrupoId.value = h.id_grupo;
                 buscarGrupo.value = h.grupo_nombre || '';
                 grupoNombreDisplay.textContent = h.grupo_nombre || '';
                 grupoSeleccionado.style.display = 'block';
                 
+                // Maestro
                 horarioMaestroId.value = h.id_maestro;
                 buscarMaestro.value = h.maestro_nombre || '';
                 maestroNombreDisplay.textContent = h.maestro_nombre || '';
                 maestroSeleccionado.style.display = 'block';
                 
-                horarioMateriaId.value = h.id_materia;
-                buscarMateria.value = h.materia_nombre || '';
-                materiaNombreDisplay.textContent = h.materia_nombre || '';
-                materiaSeleccionada.style.display = 'block';
-
+                // ⚠️ Laboratorio y Materia (con el nuevo flujo)
                 horarioLaboratorio.value = h.id_laboratorio || '';
+                // Cargar las materias del laboratorio y preseleccionar la materia actual
+                cargarMaterias(h.id_laboratorio || null, h.id_materia);
                 
                 btnCancelarHorario.style.display = 'inline-block';
                 btnGuardarHorario.innerHTML = '<i class="fas fa-edit me-1"></i>Actualizar Horario';
@@ -761,13 +738,61 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(e => console.error('Error al cargar laboratorios:', e));
     }
 
+    function cargarMaterias(idLaboratorio, materiaSeleccionadaId = null) {
+        const url = new URL('{{ route("admin.horarios.materias.por.laboratorio") }}', window.location.origin);
+        if (idLaboratorio) {
+            url.searchParams.append('id_laboratorio', idLaboratorio);
+        }
+
+        fetch(url, {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                horarioMateria.innerHTML = '<option value="">—Seleccione una materia—</option>';
+                
+                if (data.materias.length === 0) {
+                    horarioMateria.innerHTML = '<option value="">—No hay materias para este laboratorio—</option>';
+                    horarioMateria.disabled = true;
+                    return;
+                }
+                
+                horarioMateria.disabled = false;
+                data.materias.forEach(mat => {
+                    const opt = document.createElement('option');
+                    opt.value = mat.id;
+                    opt.textContent = mat.nombre;
+                    horarioMateria.appendChild(opt);
+                });
+
+                // Si se pasó un ID de materia para preseleccionar (al editar)
+                if (materiaSeleccionadaId) {
+                    horarioMateria.value = materiaSeleccionadaId;
+                }
+            }
+        })
+        .catch(e => console.error('Error al cargar materias:', e));
+    }
+
+    horarioLaboratorio.addEventListener('change', function() {
+        const idLab = this.value;
+        if (idLab) {
+            // Cargar materias del laboratorio seleccionado
+            cargarMaterias(idLab);
+        } else {
+            // Sin laboratorio: mostrar todas las materias
+            cargarMaterias(null);
+        }
+    });
+
     btnGuardarHorario.addEventListener('click', function() {
         if (!horarioPassword.value) {
             alert('⚠️ Debe ingresar su contraseña de administrador.');
             horarioPassword.focus();
             return;
         }
-        if (!horarioHora.value || !horarioDia.value || !horarioGrupoId.value || !horarioMaestroId.value || !horarioMateriaId.value) {
+        if (!horarioHora.value || !horarioDia.value || !horarioGrupoId.value || !horarioMaestroId.value || !horarioMateria.value) {
             alert('⚠️ Debe completar todos los campos obligatorios.');
             return;
         }
@@ -781,7 +806,7 @@ document.addEventListener('DOMContentLoaded', function() {
             id_grupo: horarioGrupoId.value,
             id_laboratorio: horarioLaboratorio.value || null,
             id_maestro: horarioMaestroId.value,
-            id_materia: horarioMateriaId.value
+            id_materia: horarioMateria.value
         };
 
         btnGuardarHorario.disabled = true;
@@ -1045,9 +1070,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (!buscarMaestro.contains(e.target) && !maestroResults.contains(e.target)) {
             maestroResults.style.display = 'none';
-        }
-        if (!buscarMateria.contains(e.target) && !materiaResults.contains(e.target)) {
-            materiaResults.style.display = 'none';
         }
     });
 

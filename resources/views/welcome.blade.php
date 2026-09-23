@@ -117,9 +117,25 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Módulo de Carga de Horarios -->
+                <div class="col-md-4">
+                    <div class="card module-card bg-secondary text-white">
+                        <div class="card-body text-center">
+                            <div class="module-icon">
+                                <i class="fa-solid fa-clock"></i>
+                            </div>
+                            <h5>Carga de Horarios</h5>
+                            <p class="small">Gestiona horarios y días inhábiles</p>
+                            <a href="{{ route('admin.horarios.index') }}" class="btn btn-light mt-2">
+                                <i class="fas fa-arrow-right"></i> Acceder
+                            </a>
+                        </div>
+                    </div>
+                </div>
                 @endif
 
-                <!-- Módulo de * -->
+                <!-- Módulo de Solicitud de Reserva de Horas -->
                 <div class="col-md-4">
                     <div class="card module-card bg-warning text-white">
                         <div class="card-body text-center">

@@ -6,6 +6,7 @@ use App\Http\Controllers\MiPerfilController;
 use App\Http\Controllers\Admin\UsuarioController;
 use App\Http\Controllers\Admin\GrupoController;
 use App\Http\Controllers\Admin\MateriaLaboratorioController;
+use App\Http\Controllers\Admin\HorarioController;
 use App\Http\Controllers\SolicitudController;
 
 // ============ RUTAS PÚBLICAS ============
@@ -87,6 +88,28 @@ Route::middleware(['auth', 'verificar.password.temporal'])->group(function () {
             
             // Listado completo de laboratorios para el select de materias
             Route::get('/laboratorios-para-select', [MateriaLaboratorioController::class, 'listarLaboratorios'])->name('lab.select');
+        });
+
+        // Carga de Horarios
+        Route::prefix('horarios')->name('horarios.')->group(function () {
+            Route::get('/', [HorarioController::class, 'index'])->name('index');
+            
+            // Autocompletes
+            Route::get('/buscar/grupos', [HorarioController::class, 'buscarGrupos'])->name('buscar.grupos');
+            Route::get('/buscar/maestros', [HorarioController::class, 'buscarMaestros'])->name('buscar.maestros');
+            Route::get('/buscar/materias', [HorarioController::class, 'buscarMaterias'])->name('buscar.materias');
+            
+            // Horarios
+            Route::get('/listar', [HorarioController::class, 'listarHorarios'])->name('listar');
+            Route::post('/guardar', [HorarioController::class, 'guardarHorario'])->name('guardar');
+            Route::get('/{id}', [HorarioController::class, 'obtenerHorario'])->name('obtener');
+            Route::delete('/{id}', [HorarioController::class, 'eliminarHorario'])->name('eliminar');
+            
+            // Días inhábiles
+            Route::get('/dias/listar', [HorarioController::class, 'listarDias'])->name('dias.listar');
+            Route::post('/dias/guardar', [HorarioController::class, 'guardarDia'])->name('dias.guardar');
+            Route::get('/dias/{id}', [HorarioController::class, 'obtenerDia'])->name('dias.obtener');
+            Route::delete('/dias/{id}', [HorarioController::class, 'eliminarDia'])->name('dias.eliminar');
         });
     });
 

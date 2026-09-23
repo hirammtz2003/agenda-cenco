@@ -98,6 +98,24 @@ class HorarioController extends Controller
         return response()->json($materias);
     }
 
+    public function listarLaboratorios()
+    {
+        try {
+            if (!Auth::user()->isAdmin()) {
+                return response()->json(['success' => false, 'message' => 'Sin permisos'], 403);
+            }
+
+            $laboratorios = \App\Models\Laboratorio::orderBy('nombre')->get();
+
+            return response()->json([
+                'success' => true,
+                'laboratorios' => $laboratorios
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     // ============ HORARIOS ============
 
     public function listarHorarios(Request $request)
@@ -133,7 +151,8 @@ class HorarioController extends Controller
                 });
             }
 
-            $horarios = $query->orderBy('dia')->orderBy('hora')->get()->map(function ($h) {
+            $horarios = $query->with(['grupo', 'maestro', 'materia', 'laboratorio'])
+                            ->orderBy('dia')->orderBy('hora')->get()->map(function ($h) {
                 return [
                     'id' => $h->id,
                     'hora' => $h->hora,
@@ -147,6 +166,8 @@ class HorarioController extends Controller
                     'maestro_nombre' => $h->maestro ? $h->maestro->nombre_completo : null,
                     'id_materia' => $h->id_materia,
                     'materia_nombre' => $h->materia ? $h->materia->nombre : null,
+                    'id_laboratorio' => $h->id_laboratorio,               // ← nuevo
+                    'laboratorio_nombre' => $h->laboratorio ? $h->laboratorio->nombre : null,  // ← nuevo
                 ];
             });
 
@@ -177,6 +198,7 @@ class HorarioController extends Controller
                 'id_grupo' => 'required|exists:grupos,id',
                 'id_maestro' => 'required|exists:users,id',
                 'id_materia' => 'required|exists:materias,id',
+                'id_laboratorio' => 'nullable|exists:laboratorios,id',
             ]);
 
             if ($validator->fails()) {
@@ -221,6 +243,7 @@ class HorarioController extends Controller
                 'id_grupo' => $request->id_grupo,
                 'id_maestro' => $request->id_maestro,
                 'id_materia' => $request->id_materia,
+                'id_laboratorio' => $request->id_laboratorio,
             ];
 
             if ($request->filled('id')) {
@@ -251,7 +274,7 @@ class HorarioController extends Controller
                 return response()->json(['success' => false, 'message' => 'Sin permisos'], 403);
             }
 
-            $h = Horario::with(['grupo', 'maestro', 'materia'])->find($id);
+            $h = Horario::with(['grupo', 'maestro', 'materia', 'laboratorio'])->find($id);
             if (!$h) {
                 return response()->json(['success' => false, 'message' => 'Horario no encontrado'], 404);
             }
@@ -269,6 +292,8 @@ class HorarioController extends Controller
                     'maestro_nombre' => $h->maestro ? $h->maestro->nombre_completo : null,
                     'id_materia' => $h->id_materia,
                     'materia_nombre' => $h->materia ? $h->materia->nombre : null,
+                    'id_laboratorio' => $h->id_laboratorio,
+                    'laboratorio_nombre' => $h->laboratorio ? $h->laboratorio->nombre : null,
                 ]
             ]);
         } catch (\Exception $e) {

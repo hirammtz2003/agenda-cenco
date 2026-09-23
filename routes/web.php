@@ -104,6 +104,7 @@ Route::middleware(['auth', 'verificar.password.temporal'])->group(function () {
             Route::post('/guardar', [HorarioController::class, 'guardarHorario'])->name('guardar');
             Route::get('/{id}', [HorarioController::class, 'obtenerHorario'])->name('obtener');
             Route::delete('/{id}', [HorarioController::class, 'eliminarHorario'])->name('eliminar');
+            Route::get('/laboratorios/listar', [HorarioController::class, 'listarLaboratorios'])->name('laboratorios.listar');
             
             // Días inhábiles
             Route::get('/dias/listar', [HorarioController::class, 'listarDias'])->name('dias.listar');

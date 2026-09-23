@@ -234,6 +234,17 @@
                         </div>
                     </div>
 
+                    <!-- Laboratorio (select dinámico) -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Laboratorio</label>
+                            <select id="horarioLaboratorio" class="form-select">
+                                <option value="">—Ninguno—</option>
+                            </select>
+                            <small class="text-muted">Seleccione el laboratorio donde se llevará a cabo</small>
+                        </div>
+                    </div>
+
                     <div class="row mt-3 pt-3 border-top">
                         <div class="col-md-5">
                             <label class="form-label">
@@ -373,18 +384,19 @@
                     <table class="table table-hover mb-0">
                         <thead class="table-dark">
                             <tr>
-                                <th style="width: 18%;">Hora</th>
-                                <th style="width: 12%;">Día</th>
-                                <th style="width: 8%;">¿Fija?</th>
-                                <th style="width: 22%;">Grupo</th>
-                                <th style="width: 18%;">Maestro</th>
-                                <th style="width: 14%;">Materia</th>
-                                <th style="width: 8%;">Acciones</th>
+                                <th style="width: 15%;">Hora</th>
+                                <th style="width: 10%;">Día</th>
+                                <th style="width: 7%;">¿Fija?</th>
+                                <th style="width: 20%;">Grupo</th>
+                                <th style="width: 15%;">Maestro</th>
+                                <th style="width: 13%;">Materia</th>
+                                <th style="width: 13%;">Laboratorio</th>
+                                <th style="width: 7%;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="tablaHorarios">
                             <tr>
-                                <td colspan="7" class="text-center py-4">
+                                <td colspan="8" class="text-center py-4">
                                     <i class="fas fa-clock fa-2x text-muted mb-2"></i>
                                     <p class="text-muted mb-0">No hay horarios registrados</p>
                                 </td>
@@ -501,6 +513,7 @@ function limpiarFormHorario() {
     document.getElementById('grupoSeleccionado').style.display = 'none';
     document.getElementById('maestroSeleccionado').style.display = 'none';
     document.getElementById('materiaSeleccionada').style.display = 'none';
+    document.getElementById('horarioLaboratorio').value = '';
     document.getElementById('btnCancelarHorario').style.display = 'none';
     document.getElementById('btnGuardarHorario').innerHTML = '<i class="fas fa-save me-1"></i>Guardar Horario';
 }
@@ -533,6 +546,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const maestroNombreDisplay = document.getElementById('maestroNombreDisplay');
     const buscarMateria = document.getElementById('buscarMateria');
     const horarioMateriaId = document.getElementById('horarioMateriaId');
+    const horarioLaboratorio = document.getElementById('horarioLaboratorio');
     const materiaResults = document.getElementById('materiaResults');
     const materiaSeleccionada = document.getElementById('materiaSeleccionada');
     const materiaNombreDisplay = document.getElementById('materiaNombreDisplay');
@@ -608,6 +622,10 @@ document.addEventListener('DOMContentLoaded', function() {
         materiaSeleccionada.style.display = 'block';
     }, '{{ route("admin.horarios.buscar.materias") }}');
 
+    cargarLaboratorios();
+    listarHorarios();
+    listarDias();
+
     // ===== LISTAR HORARIOS =====
     function listarHorarios() {
         const params = new URLSearchParams({
@@ -636,7 +654,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (horarios.length === 0) {
             tabla.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center py-4">
+                    <td colspan="8" class="text-center py-4">
                         <i class="fas fa-hourglass-half fa-2x text-muted mb-2"></i>
                         <p class="text-muted mb-0">No se encontraron horarios</p>
                     </td>
@@ -649,10 +667,11 @@ document.addEventListener('DOMContentLoaded', function() {
             html += `<tr data-id="${h.id}">
                 <td><span class="badge bg-secondary">${h.hora_legible}</span></td>
                 <td><span class="badge bg-primary">${h.dia_legible}</span></td>
-                <td>${h.hora_fija ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-times-circle text-muted"></i>'}</td>
+                <td>${h.hora_fija ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-times-circle text-danger"></i>'}</td>
                 <td><small>${h.grupo_nombre || '—'}</small></td>
                 <td><small>${h.maestro_nombre || '—'}</small></td>
                 <td><small>${h.materia_nombre || '—'}</small></td>
+                <td><small>${h.laboratorio_nombre || '—'}</small></td>
                 <td class="action-buttons">
                     <div class="btn-group" role="group">
                         <button type="button" class="btn btn-sm btn-outline-primary editar-horario-btn" title="Editar">
@@ -708,6 +727,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 buscarMateria.value = h.materia_nombre || '';
                 materiaNombreDisplay.textContent = h.materia_nombre || '';
                 materiaSeleccionada.style.display = 'block';
+
+                horarioLaboratorio.value = h.id_laboratorio || '';
                 
                 btnCancelarHorario.style.display = 'inline-block';
                 btnGuardarHorario.innerHTML = '<i class="fas fa-edit me-1"></i>Actualizar Horario';
@@ -717,6 +738,27 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(e => { console.error(e); alert('Error al cargar horario.'); });
+    }
+
+    function cargarLaboratorios() {
+        fetch('{{ route("admin.horarios.laboratorios.listar") }}', {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const valorActual = horarioLaboratorio.value;
+                horarioLaboratorio.innerHTML = '<option value="">—Ninguno—</option>';
+                data.laboratorios.forEach(lab => {
+                    const opt = document.createElement('option');
+                    opt.value = lab.id;
+                    opt.textContent = lab.nombre;
+                    horarioLaboratorio.appendChild(opt);
+                });
+                if (valorActual) horarioLaboratorio.value = valorActual;
+            }
+        })
+        .catch(e => console.error('Error al cargar laboratorios:', e));
     }
 
     btnGuardarHorario.addEventListener('click', function() {
@@ -737,6 +779,7 @@ document.addEventListener('DOMContentLoaded', function() {
             dia: horarioDia.value,
             hora_fija: horarioHoraFija.checked ? 1 : 0,
             id_grupo: horarioGrupoId.value,
+            id_laboratorio: horarioLaboratorio.value || null,
             id_maestro: horarioMaestroId.value,
             id_materia: horarioMateriaId.value
         };

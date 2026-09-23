@@ -18,7 +18,8 @@ class Horario extends Model
         'hora_fija',
         'id_grupo',
         'id_maestro',
-        'id_materia'
+        'id_materia',
+        'id_laboratorio'
     ];
 
     protected $casts = [
@@ -39,6 +40,11 @@ class Horario extends Model
     public function materia()
     {
         return $this->belongsTo(Materia::class, 'id_materia');
+    }
+
+    public function laboratorio()  // ← nueva relación
+    {
+        return $this->belongsTo(Laboratorio::class, 'id_laboratorio');
     }
 
     // Accessors para mostrar datos legibles

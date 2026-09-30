@@ -12,27 +12,29 @@ class Practica extends Model
     protected $table = 'practicas';
 
     protected $fillable = [
-        'fecha_inicio',
-        'fecha_final',
-        'horas_requeridas',
+        'nombre',
+        'no_actividad',
+        'competencia',
+        'atributo',
         'materiales',
         'herramientas',
         'estatus',
         'fecha_solicitud',
         'notas',
-        'id_autorizante',
-        'id_solicitante',
-        'id_actividad',
-        'id_grupo'
+        'id_horario',
     ];
 
     protected $casts = [
         'materiales' => 'array',
         'herramientas' => 'array',
-        'fecha_inicio' => 'date',
-        'fecha_final' => 'date',
-        'fecha_solicitud' => 'datetime'
+        'fecha_solicitud' => 'datetime',
     ];
+
+    // Relación con horario
+    public function horario()
+    {
+        return $this->belongsTo(Horario::class, 'id_horario');
+    }
 
     public $timestamps = false;
 

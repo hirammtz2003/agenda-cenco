@@ -117,23 +117,20 @@
             
             <!-- Materia con autocomplete -->
             <div class="row mb-3">
-                <div class="col-md-6 position-relative">
-                    <label class="form-label">Materia:</label>
-                    <input type="text" 
-                           id="materia"
-                           name="materia"
-                           class="form-control"
-                           placeholder="Ej: Submódulo I, Submódulo II, etc."
-                           maxlength="50"
-                           autocomplete="off">
-                    <div id="materiaResults" class="search-results-dropdown"></div>
-                    <small class="text-muted">Comience a escribir para buscar materias existentes</small>
-                </div>
-            </div>
-
-            <!-- Grupo con autocomplete -->
-            <div class="row mb-3">
-                <div class="col-md-6 position-relative">
+                <div class="col-md-4">
+                            <label class="form-label">Laboratorio:</label>
+                            <select id="horarioLaboratorio" class="form-select">
+                                <option value="">—Seleccione una opción—</option>
+                            </select>
+                        </div>
+                <div class="col-md-4">
+                            <label class="form-label">Materia:</label>
+                            <select id="horarioMateria" class="form-select">
+                                <option value="">—Seleccione un laboratorio primero—</option>
+                            </select>
+                            <small class="text-muted">Solo se muestran materias del laboratorio seleccionado</small>
+                        </div>
+                <div class="col-md-4 position-relative">
                     <label class="form-label">Grupo:</label>
                     <input type="text" 
                            id="buscar_grupo"
@@ -142,29 +139,18 @@
                            autocomplete="off">
                     <input type="hidden" id="grupo_id" name="grupo_id" value="">
                     <div id="grupoResults" class="search-results-dropdown"></div>
-                    <small class="text-muted">Comience a escribir para buscar grupos existentes</small>
-                </div>
-                <div class="col-md-6 d-flex align-items-end">
-                    <div id="grupoSeleccionado" style="display:none;" class="w-100">
-                        <div class="alert alert-info mb-0">
-                            <i class="fas fa-check-circle me-2"></i>
-                            Grupo seleccionado: <strong id="grupoNombreDisplay"></strong>
-                        </div>
-                    </div>
+                    <small class="text-muted">Comience a escribir para buscar grupos</small>
                 </div>
             </div>
 
             <!-- Fechas y horas -->
             <div class="row mb-3">
-                <div class="col-md-3">
-                    <label class="form-label">Fecha de inicio:</label>
+                <div class="col-md-4">
+                    <label class="form-label">Fecha de inicio de la práctica:</label>
                     <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio">
+                    <small class="text-muted">Elija el próximo día hábil o una fecha futura del semestre</small>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Fecha de fin:</label>
-                    <input type="date" class="form-control" id="fecha_final" name="fecha_final">
-                </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Horas requeridas:</label>
                     <input type="number" 
                            id="horas_requeridas"
@@ -176,7 +162,27 @@
                            placeholder="0"
                            autocomplete="off">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-6 d-flex align-items-end justify-content-end">
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="button" class="btn btn-info" id="btnBuscarHoras">
+                            <i class="fa-solid fa-magnifying-glass me-2"></i>Bucar horas disponibles
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-3 mt-4 pt-3 border-top">   
+                <div class="col-md-5">
+                            <label class="form-label">Nombre:</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="materiaNombre"
+                                   maxlength="50"
+                                   autocomplete="off"
+                                   placeholder="Ej: Submódulo I"
+                                   oninput="actualizarContador(this, 'materiaNombreCounter')">
+                            <small class="counter-badge"><span id="materiaNombreCounter">0</span>/50</small>
+                        </div>
+                <div class="col-md-2">
                     <label class="form-label">Número de actividad:</label>
                     <input type="number" 
                            id="numero_actividad"

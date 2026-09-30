@@ -7,6 +7,8 @@ use App\Models\DiaInhabil;
 use App\Models\Grupo;
 use App\Models\Horario;
 use App\Models\Materia;
+use App\Models\Practica;
+use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -264,10 +266,14 @@ class HorarioController extends Controller
                 ]);
             }
 
+            DB::beginTransaction();
+
+            $esHoraFija = $request->boolean('hora_fija');
+
             $data = [
                 'hora' => $request->hora,
                 'dia' => $request->dia,
-                'hora_fija' => $request->boolean('hora_fija'),
+                'hora_fija' => $esHoraFija,
                 'id_grupo' => $request->id_grupo,
                 'id_maestro' => $request->id_maestro,
                 'id_materia' => $request->id_materia,
@@ -283,6 +289,50 @@ class HorarioController extends Controller
                 $mensaje = '✅ Horario creado correctamente.';
             }
 
+            // 🔥 LÓGICA DE PRÁCTICA AUTOMÁTICA
+            if ($esHoraFija) {
+                // Verificar si ya existe una práctica vinculada
+                $practicaExistente = Practica::where('id_horario', $horario->id)->first();
+
+                // Obtener datos del horario para prellenar la práctica
+                $materia = \App\Models\Materia::find($request->id_materia);
+                $nombreMateria = $materia ? $materia->nombre : null;
+
+                $datosPractica = [
+                    'nombre' => null,
+                    'no_actividad' => null,
+                    'competencia' => null,
+                    'atributo' => null,
+                    'materiales' => null,
+                    'herramientas' => null,
+                    'estatus' => 'Reservada',
+                    'fecha_solicitud' => now(),
+                    'notas' => null,
+                    'id_horario' => $horario->id,
+                ];
+
+                if ($practicaExistente) {
+                    // Si ya existe, solo actualizamos el nombre de la materia (por si cambió)
+                    $practicaExistente->update([
+                        'nombre' => $nombreMateria,
+                    ]);
+                    $mensaje .= ' Se actualizó la práctica vinculada.';
+                } else {
+                    // Crear nueva práctica
+                    Practica::create($datosPractica);
+                    $mensaje .= ' Se creó una práctica automáticamente por ser hora fija.';
+                }
+            } else {
+                // Si ya no es hora fija, eliminar la práctica vinculada (si existe)
+                $practicaExistente = Practica::where('id_horario', $horario->id)->first();
+                if ($practicaExistente) {
+                    $practicaExistente->delete();
+                    $mensaje .= ' Se eliminó la práctica vinculada porque ya no es hora fija.';
+                }
+            }
+
+            DB::commit();
+
             return response()->json([
                 'success' => true,
                 'message' => $mensaje,
@@ -290,6 +340,7 @@ class HorarioController extends Controller
                 'limpiar_password' => true
             ]);
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Error al guardar horario: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -348,11 +399,13 @@ class HorarioController extends Controller
             }
 
             $horario = Horario::findOrFail($id);
+            
+            // La práctica se eliminará automáticamente por el onDelete('cascade')
             $horario->delete();
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Horario eliminado correctamente.',
+                'message' => '✅ Horario eliminado correctamente (y su práctica vinculada si existía).',
                 'limpiar_password' => true
             ]);
         } catch (\Exception $e) {

@@ -47,6 +47,11 @@ class Horario extends Model
         return $this->belongsTo(Laboratorio::class, 'id_laboratorio');
     }
 
+    public function practica()
+    {
+        return $this->hasOne(Practica::class, 'id_horario');
+    }
+
     // Accessors para mostrar datos legibles
     public function getDiaLegibleAttribute()
     {

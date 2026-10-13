@@ -151,16 +151,16 @@
                     </div>
                 </div>
 
-                <!-- Módulo de * -->
+                <!-- Módulo de Historial de Solicitudes -->
                 <div class="col-md-4">
                     <div class="card module-card bg-info text-white">
                         <div class="card-body text-center">
                             <div class="module-icon">
-                                
+                                <i class="fas fa-history"></i>
                             </div>
-                            <h5>*</h5>
-                            <p class="small">*</p>
-                            <a href="#" class="btn btn-light mt-2">
+                            <h5>Historial de Solicitudes</h5>
+                            <p class="small">Consulta y gestiona las solicitudes</p>
+                            <a href="{{ route('historial.index') }}" class="btn btn-light mt-2">
                                 <i class="fas fa-arrow-right"></i> Acceder
                             </a>
                         </div>

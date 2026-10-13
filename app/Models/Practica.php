@@ -22,12 +22,14 @@ class Practica extends Model
         'fecha_solicitud',
         'notas',
         'id_horario',
+        'fecha_reserva',
     ];
 
     protected $casts = [
         'materiales' => 'array',
         'herramientas' => 'array',
         'fecha_solicitud' => 'datetime',
+        'fecha_reserva' => 'date',
     ];
 
     // Relación con horario

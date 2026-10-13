@@ -266,14 +266,15 @@ class HorarioController extends Controller
                 ]);
             }
 
-            DB::beginTransaction();
+            /*DB::beginTransaction();
 
-            $esHoraFija = $request->boolean('hora_fija');
+            $esHoraFija = $request->boolean('hora_fija');*/
 
             $data = [
                 'hora' => $request->hora,
                 'dia' => $request->dia,
-                'hora_fija' => $esHoraFija,
+                'hora_fija' => $request->boolean('hora_fija'),
+                //'hora_fija' => $esHoraFija,
                 'id_grupo' => $request->id_grupo,
                 'id_maestro' => $request->id_maestro,
                 'id_materia' => $request->id_materia,
@@ -290,7 +291,7 @@ class HorarioController extends Controller
             }
 
             // 🔥 LÓGICA DE PRÁCTICA AUTOMÁTICA
-            if ($esHoraFija) {
+            /*if ($esHoraFija) {
                 // Verificar si ya existe una práctica vinculada
                 $practicaExistente = Practica::where('id_horario', $horario->id)->first();
 
@@ -331,7 +332,7 @@ class HorarioController extends Controller
                 }
             }
 
-            DB::commit();
+            DB::commit();*/
 
             return response()->json([
                 'success' => true,
@@ -340,7 +341,7 @@ class HorarioController extends Controller
                 'limpiar_password' => true
             ]);
         } catch (\Exception $e) {
-            DB::rollBack();
+            //DB::rollBack();
             Log::error('Error al guardar horario: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -401,11 +402,12 @@ class HorarioController extends Controller
             $horario = Horario::findOrFail($id);
             
             // La práctica se eliminará automáticamente por el onDelete('cascade')
-            $horario->delete();
+            //$horario->delete();
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Horario eliminado correctamente (y su práctica vinculada si existía).',
+                'message' => '✅ Horario eliminado correctamente.',
+                //'message' => '✅ Horario eliminado correctamente (y su práctica vinculada si existía).',
                 'limpiar_password' => true
             ]);
         } catch (\Exception $e) {

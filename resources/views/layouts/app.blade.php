@@ -50,6 +50,7 @@
     <!-- Footer -->
     @include('partials.footer')
     
+    @vite(['resources/js/app.js'])
     @stack('scripts')
 </body>
 </html>

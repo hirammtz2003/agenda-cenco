@@ -1,10 +1,8 @@
-//import './bootstrap';
-// Importar Bootstrap JS
 import * as bootstrap from 'bootstrap';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
-// O importar componentes específicos
-// import { Modal, Toast, Alert } from 'bootstrap';
+// Exponer Bootstrap globalmente para que los scripts inline lo usen
+window.bootstrap = bootstrap;
 
 // Tu JavaScript personalizado
 document.addEventListener('DOMContentLoaded', function() {

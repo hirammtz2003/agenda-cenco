@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\GrupoController;
 use App\Http\Controllers\Admin\MateriaLaboratorioController;
 use App\Http\Controllers\Admin\HorarioController;
 use App\Http\Controllers\SolicitudController;
+use App\Http\Controllers\Admin\HistorialController;
 
 // ============ RUTAS PÚBLICAS ============
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -34,8 +35,23 @@ Route::middleware(['auth', 'verificar.password.temporal'])->group(function () {
     Route::prefix('solicitud')->name('solicitud.')->group(function () {
         Route::get('/', [SolicitudController::class, 'index'])->name('index');
         Route::post('/store', [SolicitudController::class, 'store'])->name('store');
-        Route::get('/buscar/materias', [SolicitudController::class, 'buscarMaterias'])->name('buscar.materias');
-        Route::get('/buscar/grupos', [SolicitudController::class, 'buscarGrupos'])->name('buscar.grupos');
+        
+        // Nuevos endpoints
+        Route::get('/laboratorios/listar', [SolicitudController::class, 'listarLaboratorios'])->name('laboratorios.listar');
+        Route::get('/materias-por-laboratorio', [SolicitudController::class, 'listarMateriasPorLaboratorio'])->name('materias.por.laboratorio');
+        Route::get('/buscar-horas-disponibles', [SolicitudController::class, 'buscarHorasDisponibles'])->name('buscar.horas');
+        Route::get('/fecha-inicio-default', [SolicitudController::class, 'calcularFechaInicioDefault'])->name('fecha.default');
+    });
+
+    Route::prefix('historial')->name('historial.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\HistorialController::class, 'index'])->name('index');
+        Route::get('/listar', [App\Http\Controllers\Admin\HistorialController::class, 'listar'])->name('listar');
+        Route::get('/detalles/{id}', [App\Http\Controllers\Admin\HistorialController::class, 'detalles'])->name('detalles');
+        Route::post('/actualizar-estatus', [App\Http\Controllers\Admin\HistorialController::class, 'actualizarEstatus'])->name('actualizar.estatus');
+        Route::delete('/{id}', [App\Http\Controllers\Admin\HistorialController::class, 'eliminar'])->name('eliminar');
+        
+        Route::get('/laboratorios/listar', [App\Http\Controllers\Admin\HistorialController::class, 'listarLaboratorios'])->name('laboratorios.listar');
+        Route::get('/materias-por-laboratorio', [App\Http\Controllers\Admin\HistorialController::class, 'listarMateriasPorLaboratorio'])->name('materias.por.laboratorio');
     });
     
     // ============ MÓDULOS DE ADMINISTRACIÓN (SOLO ADMIN) ============

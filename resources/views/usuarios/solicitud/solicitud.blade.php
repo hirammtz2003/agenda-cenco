@@ -140,23 +140,35 @@
 
             <div class="form-row">
                 <div class="row mb-3">
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="form-label">Laboratorio *</label>
                         <select id="laboratorio" class="form-select">
                             <option value="">—Seleccione—</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="form-label">Materia *</label>
                         <select id="materia" class="form-select" disabled>
                             <option value="">—Seleccione un laboratorio primero—</option>
                         </select>
                     </div>
+                    <div class="col-md-4 position-relative">
+                        <label class="form-label">Grupo *</label>
+                        <input type="text" 
+                            id="buscarGrupo"
+                            class="form-control" 
+                            placeholder="Semestre, grupo o carrera..."
+                            autocomplete="off">
+                        <input type="hidden" id="grupo_id" value="">
+                        <div id="grupoResults" class="search-results-dropdown"></div>
+                    </div>
+                </div>
+                <div class="row mb-3">
                     <div class="col-md-3">
                         <label class="form-label">Fecha de inicio *</label>
                         <input type="date" class="form-control" id="fecha_inicio">
                         <small class="text-muted">A partir de esta fecha se buscarán horas</small>
-                    </div>
+                    </div>                    
                     <div class="col-md-3">
                         <label class="form-label">Horas requeridas *</label>
                         <input type="number" class="form-control" id="horas_requeridas"
@@ -310,6 +322,7 @@
 @push('scripts')
 <script>
 // ===== VARIABLES GLOBALES =====
+let grupoTimeoutId = null;
 let materiales = [];
 let herramientas = [];
 let horasDisponibles = [];
@@ -387,6 +400,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===== ELEMENTOS =====
     const laboratorioSelect = document.getElementById('laboratorio');
     const materiaSelect = document.getElementById('materia');
+    const buscarGrupo = document.getElementById('buscarGrupo');
+    const grupoId = document.getElementById('grupo_id');
+    const grupoResults = document.getElementById('grupoResults');
     const fechaInicio = document.getElementById('fecha_inicio');
     const horasRequeridas = document.getElementById('horas_requeridas');
     const btnBuscarHoras = document.getElementById('btnBuscarHoras');
@@ -451,6 +467,50 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ===== EVENTOS =====
+    buscarGrupo.addEventListener('input', function() {
+        const query = this.value.trim();
+        clearTimeout(grupoTimeoutId);
+        
+        if (query.length < 1) {
+            grupoResults.style.display = 'none';
+            return;
+        }
+        
+        grupoTimeoutId = setTimeout(() => {
+            fetch(`{{ route('solicitud.buscar.grupos') }}?q=${encodeURIComponent(query)}`, {
+                headers: { 'Accept': 'application/json' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.length > 0) {
+                    grupoResults.innerHTML = data.map(item => 
+                        `<div class="search-result-item" data-id="${item.id}" data-nombre="${item.nombre}">${item.nombre}</div>`
+                    ).join('');
+                    grupoResults.style.display = 'block';
+                } else {
+                    grupoResults.innerHTML = '<div class="search-result-item text-muted">No se encontraron grupos</div>';
+                    grupoResults.style.display = 'block';
+                }
+            });
+        }, 250);
+    });
+
+    grupoResults.addEventListener('click', function(e) {
+        const item = e.target.closest('.search-result-item');
+        if (item && item.dataset.id) {
+            grupoId.value = item.dataset.id;
+            buscarGrupo.value = item.dataset.nombre;
+            grupoResults.style.display = 'none';
+        }
+    });
+
+    // Ocultar al hacer clic fuera
+    document.addEventListener('click', function(e) {
+        if (!buscarGrupo.contains(e.target) && !grupoResults.contains(e.target)) {
+            grupoResults.style.display = 'none';
+        }
+    });
+
     laboratorioSelect.addEventListener('change', function() {
         const idLab = this.value;
         if (idLab) {
@@ -469,11 +529,13 @@ document.addEventListener('DOMContentLoaded', function() {
     btnBuscarHoras.addEventListener('click', function() {
         const idLab = laboratorioSelect.value;
         const idMat = materiaSelect.value;
+        const idGrupo = grupoId.value;
         const fecha = fechaInicio.value;
         const horas = parseInt(horasRequeridas.value) || 0;
 
         if (!idLab) { alert('Seleccione un laboratorio.'); return; }
         if (!idMat) { alert('Seleccione una materia.'); return; }
+        if (!idGrupo) { alert('Seleccione un grupo.'); return; }
         if (!fecha) { alert('Seleccione una fecha de inicio.'); return; }
         if (horas <= 0) { alert('Ingrese la cantidad de horas requeridas.'); return; }
 
@@ -483,6 +545,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const params = new URLSearchParams({
             id_laboratorio: idLab,
             id_materia: idMat,
+            id_grupo: idGrupo,
             fecha_inicio: fecha,
             horas_requeridas: horas
         });
@@ -614,6 +677,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===== LIMPIAR =====
     function limpiarFormulario() {
         document.getElementById('solicitudForm').reset();
+        buscarGrupo.value = '';
+        grupoId.value = '';
+        grupoResults.style.display = 'none';
         materiales = [];
         herramientas = [];
         horasDisponibles = [];

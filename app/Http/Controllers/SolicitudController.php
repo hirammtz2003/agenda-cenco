@@ -47,6 +47,39 @@ class SolicitudController extends Controller
         }
     }
 
+    /**
+     * Autocompletado de grupos.
+     */
+    public function buscarGrupos(Request $request)
+    {
+        try {
+            $query = $request->get('q', '');
+            if (strlen($query) < 1) {
+                return response()->json([]);
+            }
+
+            $grupos = \App\Models\Grupo::where(function ($q) use ($query) {
+                    $q->where('semestre', 'LIKE', "%{$query}%")
+                    ->orWhere('grupo', 'LIKE', "%{$query}%")
+                    ->orWhere('carrera', 'LIKE', "%{$query}%")
+                    ->orWhere('ciclo_escolar', 'LIKE', "%{$query}%");
+                })
+                ->limit(10)
+                ->get()
+                ->map(function ($g) {
+                    return [
+                        'id' => $g->id,
+                        'nombre' => "{$g->semestre} {$g->grupo} - {$g->carrera}" . 
+                                    ($g->ciclo_escolar ? " ({$g->ciclo_escolar})" : '')
+                    ];
+                });
+
+            return response()->json($grupos);
+        } catch (\Exception $e) {
+            return response()->json([]);
+        }
+    }
+
     // ============ FECHA POR DEFECTO ============
 
     /**
@@ -56,12 +89,26 @@ class SolicitudController extends Controller
     public function calcularFechaInicioDefault()
     {
         try {
-            $fecha = Carbon::tomorrow();
+            // Obtener el inicio de semestre
+            $inicioSemestre = Fecha::where('tipo', 'Inicio de semestre')->first();
+            
+            // Si no está configurado, usar mañana
+            $fecha = $inicioSemestre 
+                ? Carbon::parse($inicioSemestre->fecha)
+                : Carbon::tomorrow();
+
+            // Si el inicio de semestre es pasado o es hoy, partir de mañana
+            $hoy = Carbon::today();
+            if ($fecha->lte($hoy)) {
+                $fecha = Carbon::tomorrow();
+            }
+
+            // Obtener días inhábiles
             $diasInhabiles = Fecha::where('tipo', 'Día inhábil')->pluck('fecha')->map(function ($f) {
                 return $f instanceof \Carbon\Carbon ? $f->format('Y-m-d') : (string) $f;
             })->toArray();
 
-            // Máximo 30 iteraciones para evitar loops infinitos
+            // Saltar fines de semana e inhábiles
             $intentos = 0;
             while ($intentos < 30) {
                 $esFinDeSemana = $fecha->isWeekend();
@@ -76,7 +123,8 @@ class SolicitudController extends Controller
 
             return response()->json([
                 'success' => true,
-                'fecha' => $fecha->format('Y-m-d')
+                'fecha' => $fecha->format('Y-m-d'),
+                'semestre_inicio' => $inicioSemestre ? $inicioSemestre->fecha->format('Y-m-d') : null,
             ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -96,6 +144,7 @@ class SolicitudController extends Controller
             $validator = validator($request->all(), [
                 'id_laboratorio' => 'required|exists:laboratorios,id',
                 'id_materia' => 'required|exists:materias,id',
+                'id_grupo' => 'required|exists:grupos,id',
                 'fecha_inicio' => 'required|date',
                 'horas_requeridas' => 'required|integer|min:1|max:168',
             ]);
@@ -108,61 +157,91 @@ class SolicitudController extends Controller
             }
 
             $fechaInicio = Carbon::parse($request->fecha_inicio);
-            $diasInhabiles = Fecha::where('tipo', 'Día inhábil')->pluck('fecha')->map(function ($f) {
-                return $f instanceof \Carbon\Carbon ? $f->format('Y-m-d') : (string) $f;
-            })->toArray();
 
-            // Obtener los horarios que coinciden con laboratorio y materia
+            // 🔒 Obtener límites de semestre
+            $inicioSemestre = Fecha::where('tipo', 'Inicio de semestre')->first();
+            $finSemestre = Fecha::where('tipo', 'Fin de semestre')->first();
+
+            // Validar que existan
+            if (!$inicioSemestre || !$finSemestre) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '⚠️ Aún no se han configurado las fechas de inicio y fin de semestre.'
+                ]);
+            }
+
+            $fechaMin = $inicioSemestre->fecha->startOfDay();
+            $fechaMax = $finSemestre->fecha->endOfDay();
+
+            // Validar que la fecha de inicio esté dentro del semestre
+            if ($fechaInicio->lt($fechaMin)) {
+                $fechaInicio = $fechaMin->copy();
+            }
+            if ($fechaInicio->gt($fechaMax)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '⚠️ La fecha de inicio está después del fin del semestre.'
+                ]);
+            }
+
+            // Días inhábiles (solo del tipo "Día inhábil")
+            $diasInhabiles = Fecha::where('tipo', 'Día inhábil')
+                ->pluck('fecha')
+                ->map(function ($f) {
+                    return $f instanceof \Carbon\Carbon ? $f->format('Y-m-d') : (string) $f;
+                })
+                ->toArray();
+
+            // Obtener los horarios que coinciden con laboratorio, materia, grupo Y maestro actual
             $horarios = Horario::with(['grupo', 'maestro', 'materia', 'laboratorio'])
                 ->where('id_laboratorio', $request->id_laboratorio)
                 ->where('id_materia', $request->id_materia)
+                ->where('id_grupo', $request->id_grupo)
                 ->where('id_maestro', Auth::id())
                 ->orderBy('dia')
                 ->orderBy('hora')
                 ->get();
 
-            // Mapear días de la semana a Carbon::dayOfWeek (0=domingo, 1=lunes...)
+            // Mapear días de la semana
             $diasMap = ['L' => 1, 'M' => 2, 'X' => 3, 'J' => 4, 'V' => 5];
 
-            // Generar lista de fechas futuras (próximas 12 semanas)
+            // Generar lista de fechas dentro del semestre, desde la fecha de inicio
             $fechaActual = $fechaInicio->copy();
             $fechasValidas = [];
-            $semanasAdelante = 12;
-            $fechaLimite = $fechaInicio->copy()->addWeeks($semanasAdelante);
+            $iteraciones = 0;
+            $maxIteraciones = 365; // límite de seguridad
 
-            while ($fechaActual->lte($fechaLimite)) {
+            while ($fechaActual->lte($fechaMax) && $iteraciones < $maxIteraciones) {
                 $fechaStr = $fechaActual->format('Y-m-d');
                 $diaSemana = $fechaActual->dayOfWeek;
 
+                // Excluir días inhábiles y fines de semana
                 if (!in_array($fechaStr, $diasInhabiles) && $diaSemana >= 1 && $diaSemana <= 5) {
                     $fechasValidas[] = $fechaActual->copy();
                 }
                 $fechaActual->addDay();
+                $iteraciones++;
             }
 
-            // Construir la lista de "horas individuales disponibles"
+            // Construir la lista de horas disponibles
             $resultado = [];
             foreach ($fechasValidas as $fecha) {
                 $diaSemana = $fecha->dayOfWeek;
 
                 foreach ($horarios as $h) {
-                    // Verificar que el horario corresponda al día de la semana de esta fecha
                     if (($diasMap[$h->dia] ?? null) !== $diaSemana) {
                         continue;
                     }
 
-                    // Si el horario NO es hora fija, verificar que no esté ya reservado
-                    /*if (!$h->hora_fija) {
-                        
-                    }*/
-                        // Siempre verificar que no esté reservada esa fecha + horario
-                        $yaReservado = Practica::where('id_horario', $h->id)
-                            ->where('fecha_reserva', $fecha->format('Y-m-d'))
-                            ->whereIn('estatus', ['Reservada', 'Cumplida'])
-                            ->exists();
-                        if ($yaReservado) {
-                            continue;
-                        }
+                    // Verificar que no esté ya reservada esa fecha + horario
+                    $yaReservado = Practica::where('id_horario', $h->id)
+                        ->where('fecha_reserva', $fecha->format('Y-m-d'))
+                        ->whereIn('estatus', ['Reservada', 'Cumplida'])
+                        ->exists();
+                    if ($yaReservado) {
+                        continue;
+                    }
+
                     $resultado[] = [
                         'id_horario' => $h->id,
                         'fecha' => $fecha->format('Y-m-d'),
@@ -187,14 +266,18 @@ class SolicitudController extends Controller
                 return $a['fecha'] <=> $b['fecha'];
             });
 
-            // Limitar a 2× las horas requeridas (para dar opciones al usuario)
+            // Limitar a 2× las horas requeridas
             $limite = ((int) $request->horas_requeridas) * 2;
             $resultado = array_slice($resultado, 0, $limite);
 
             return response()->json([
                 'success' => true,
                 'horas' => $resultado,
-                'total' => count($resultado)
+                'total' => count($resultado),
+                'semestre' => [
+                    'inicio' => $inicioSemestre->fecha->format('Y-m-d'),
+                    'fin' => $finSemestre->fecha->format('Y-m-d'),
+                ]
             ]);
         } catch (\Exception $e) {
             Log::error('Error al buscar horas disponibles: ' . $e->getMessage());

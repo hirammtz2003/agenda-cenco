@@ -40,6 +40,7 @@ Route::middleware(['auth', 'verificar.password.temporal'])->group(function () {
         // Nuevos endpoints
         Route::get('/laboratorios/listar', [SolicitudController::class, 'listarLaboratorios'])->name('laboratorios.listar');
         Route::get('/materias-por-laboratorio', [SolicitudController::class, 'listarMateriasPorLaboratorio'])->name('materias.por.laboratorio');
+        Route::get('/buscar-grupos', [SolicitudController::class, 'buscarGrupos'])->name('buscar.grupos');  // ← NUEVA
         Route::get('/buscar-horas-disponibles', [SolicitudController::class, 'buscarHorasDisponibles'])->name('buscar.horas');
         Route::get('/fecha-inicio-default', [SolicitudController::class, 'calcularFechaInicioDefault'])->name('fecha.default');
     });

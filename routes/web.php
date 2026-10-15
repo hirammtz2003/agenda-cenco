@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\MateriaLaboratorioController;
 use App\Http\Controllers\Admin\HorarioController;
 use App\Http\Controllers\SolicitudController;
 use App\Http\Controllers\Admin\HistorialController;
+use App\Http\Controllers\Admin\HorarioGeneralController;
 
 // ============ RUTAS PÚBLICAS ============
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -52,6 +53,12 @@ Route::middleware(['auth', 'verificar.password.temporal'])->group(function () {
         
         Route::get('/laboratorios/listar', [App\Http\Controllers\Admin\HistorialController::class, 'listarLaboratorios'])->name('laboratorios.listar');
         Route::get('/materias-por-laboratorio', [App\Http\Controllers\Admin\HistorialController::class, 'listarMateriasPorLaboratorio'])->name('materias.por.laboratorio');
+    });
+
+    // Horario General (visible para todos los usuarios autenticados)
+    Route::prefix('horario-general')->name('admin.horario-general.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\HorarioGeneralController::class, 'index'])->name('index');
+        Route::get('/datos', [App\Http\Controllers\Admin\HorarioGeneralController::class, 'datos'])->name('datos');
     });
     
     // ============ MÓDULOS DE ADMINISTRACIÓN (SOLO ADMIN) ============

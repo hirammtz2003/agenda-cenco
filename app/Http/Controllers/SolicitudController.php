@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DiaInhabil;
+use App\Models\Fecha;
 use App\Models\Horario;
 use App\Models\Laboratorio;
 use App\Models\Materia;
@@ -57,7 +57,7 @@ class SolicitudController extends Controller
     {
         try {
             $fecha = Carbon::tomorrow();
-            $diasInhabiles = DiaInhabil::pluck('fecha')->map(function ($f) {
+            $diasInhabiles = Fecha::where('tipo', 'Día inhábil')->pluck('fecha')->map(function ($f) {
                 return $f instanceof \Carbon\Carbon ? $f->format('Y-m-d') : (string) $f;
             })->toArray();
 
@@ -108,7 +108,7 @@ class SolicitudController extends Controller
             }
 
             $fechaInicio = Carbon::parse($request->fecha_inicio);
-            $diasInhabiles = DiaInhabil::pluck('fecha')->map(function ($f) {
+            $diasInhabiles = Fecha::where('tipo', 'Día inhábil')->pluck('fecha')->map(function ($f) {
                 return $f instanceof \Carbon\Carbon ? $f->format('Y-m-d') : (string) $f;
             })->toArray();
 

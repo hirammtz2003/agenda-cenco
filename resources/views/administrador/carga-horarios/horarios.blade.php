@@ -271,10 +271,17 @@
                     <input type="hidden" id="diaId" value="">
                     
                     <div class="row mb-3">
-                        <div class="col-12">
+                        <div class="col-12 mb-2">
                             <label class="form-label">Fecha *</label>
                             <input type="date" class="form-control" id="diaFecha">
-                            <small class="text-muted">Seleccione la fecha sin clases</small>
+                        </div>
+                        <div class="col-12 mb-2">
+                            <label class="form-label">Tipo *</label>
+                            <select id="diaTipo" class="form-select">
+                                <option value="Día inhábil">Día inhábil</option>
+                                <option value="Inicio de semestre">Inicio de semestre</option>
+                                <option value="Fin de semestre">Fin de semestre</option>
+                            </select>
                         </div>
                     </div>
 
@@ -414,6 +421,16 @@
                             <i class="fas fa-filter"></i> Filtrar
                         </button>
                     </div>
+
+                    <div class="col-4">
+                        <label class="form-label small">Tipo:</label>
+                        <select id="filtroTipoFecha" class="form-select form-select-sm">
+                            <option value="">—Todos—</option>
+                            <option value="Día inhábil">Día inhábil</option>
+                            <option value="Inicio de semestre">Inicio de semestre</option>
+                            <option value="Fin de semestre">Fin de semestre</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="row mb-2">
@@ -431,13 +448,14 @@
                     <table class="table table-hover mb-0">
                         <thead class="table-dark">
                             <tr>
-                                <th style="width: 60%;">Fecha</th>
-                                <th style="width: 40%;">Acciones</th>
+                                <th style="width: 40%;">Fecha</th>
+                                <th style="width: 30%;">Tipo</th>
+                                <th style="width: 30%;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="tablaDias">
                             <tr>
-                                <td colspan="2" class="text-center py-4">
+                                <td colspan="3" class="text-center py-4">
                                     <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
                                     <p class="text-muted mb-0">No hay días inhábiles</p>
                                 </td>
@@ -508,6 +526,7 @@ function limpiarFormHorario() {
 function limpiarFormDia() {
     document.getElementById('diaId').value = '';
     document.getElementById('diaFecha').value = '';
+    document.getElementById('diaTipo').value = 'Día inhábil';
     document.getElementById('diaPassword').value = '';
     document.getElementById('btnCancelarDia').style.display = 'none';
     document.getElementById('btnGuardarDia').innerHTML = '<i class="fas fa-save me-1"></i>Guardar Día';
@@ -872,7 +891,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===== DÍAS INHÁBILES =====
     function listarDias() {
         const params = new URLSearchParams({
-            busqueda: document.getElementById('filtroBusquedaDia').value || ''
+            busqueda: document.getElementById('filtroBusquedaDia').value || '',
+            tipo: document.getElementById('filtroTipoFecha')?.value || '',
         });
 
         fetch(`{{ route("admin.horarios.dias.listar") }}?${params}`)
@@ -883,6 +903,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('totalDias').innerHTML = `<i class="fas fa-calendar-times"></i> ${data.total} día(s)`;
                 document.getElementById('btnLimpiarFiltrosDias').style.display = 
                     document.getElementById('filtroBusquedaDia').value ? 'inline-block' : 'none';
+                    document.getElementById('filtroTipoFecha')?.addEventListener('change', listarDias);
             }
         })
         .catch(e => console.error('Error:', e));
@@ -893,7 +914,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (dias.length === 0) {
             tabla.innerHTML = `
                 <tr>
-                    <td colspan="2" class="text-center py-4">
+                    <td colspan="3" class="text-center py-4">
                         <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
                         <p class="text-muted mb-0">No hay días inhábiles</p>
                     </td>
@@ -903,8 +924,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let html = '';
         dias.forEach(d => {
+            const tipoClase = d.tipo === 'Día inhábil' ? 'bg-warning text-dark'
+                            : d.tipo === 'Inicio de semestre' ? 'bg-success'
+                            : 'bg-danger';
             html += `<tr data-id="${d.id}">
                 <td>${formatearFecha(d.fecha)}</td>
+                <td><span class="badge ${tipoClase}">${d.tipo}</span></td>
                 <td class="action-buttons">
                     <div class="btn-group" role="group">
                         <button type="button" class="btn btn-sm btn-outline-primary editar-dia-btn" title="Editar">
@@ -957,6 +982,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 btnCancelarDia.style.display = 'inline-block';
                 btnGuardarDia.innerHTML = '<i class="fas fa-edit me-1"></i>Actualizar Día';
+                document.getElementById('diaTipo').value = d.tipo || 'Día inhábil';
                 document.getElementById('diaFecha').scrollIntoView({ behavior: 'smooth', block: 'center' });
             } else {
                 alert('⚠️ ' + data.message);
@@ -980,7 +1006,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = {
             current_password: diaPassword.value,
             id: diaId.value || null,
-            fecha: diaFecha.value
+            fecha: diaFecha.value,
+            tipo: document.getElementById('diaTipo').value,
         };
 
         btnGuardarDia.disabled = true;

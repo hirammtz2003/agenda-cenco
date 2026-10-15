@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\DiaInhabil;
+use App\Models\Fecha;
 use App\Models\Grupo;
 use App\Models\Horario;
 use App\Models\Materia;
@@ -424,17 +424,27 @@ class HorarioController extends Controller
                 return response()->json(['success' => false, 'message' => 'Sin permisos'], 403);
             }
 
-            $query = DiaInhabil::query();
+            $query = Fecha::query();
+            
+            if ($request->filled('tipo')) {
+                $query->where('tipo', $request->tipo);
+            }
             if ($request->filled('busqueda')) {
                 $query->where('fecha', 'LIKE', "%{$request->busqueda}%");
             }
 
-            $dias = $query->orderBy('fecha')->get();
+            $fechas = $query->orderBy('fecha')->get()->map(function ($f) {
+                return [
+                    'id' => $f->id,
+                    'fecha' => $f->fecha ? $f->fecha->format('Y-m-d') : null,
+                    'tipo' => $f->tipo,
+                ];
+            });
 
             return response()->json([
                 'success' => true,
-                'dias' => $dias,
-                'total' => $dias->count()
+                'dias' => $fechas,
+                'total' => $fechas->count()
             ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -450,8 +460,9 @@ class HorarioController extends Controller
 
             $validator = validator($request->all(), [
                 'current_password' => 'required|current_password',
-                'id' => 'nullable|exists:dias_inhabiles,id',
+                'id' => 'nullable|exists:fechas,id',
                 'fecha' => 'required|date',
+                'tipo' => 'required|in:Día inhábil,Inicio de semestre,Fin de semestre',
             ]);
 
             if ($validator->fails()) {
@@ -461,31 +472,50 @@ class HorarioController extends Controller
                 ], 422);
             }
 
-            // Verificar que no exista la misma fecha
-            $query = DiaInhabil::where('fecha', $request->fecha);
-            if ($request->filled('id')) {
-                $query->where('id', '!=', $request->id);
-            }
-            if ($query->exists()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => '⚠️ Esta fecha ya está registrada como día inhábil.'
-                ]);
+            // 🔒 Si es Inicio o Fin de semestre, solo puede existir uno
+            if (in_array($request->tipo, ['Inicio de semestre', 'Fin de semestre'])) {
+                $query = Fecha::where('tipo', $request->tipo);
+                if ($request->filled('id')) {
+                    $query->where('id', '!=', $request->id);
+                }
+                if ($query->exists()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "⚠️ Ya existe una fecha registrada como '{$request->tipo}'. Solo puede haber una."
+                    ]);
+                }
+            } else {
+                // Para Día inhábil, evitar duplicar la misma fecha exacta
+                $query = Fecha::where('fecha', $request->fecha)->where('tipo', 'Día inhábil');
+                if ($request->filled('id')) {
+                    $query->where('id', '!=', $request->id);
+                }
+                if ($query->exists()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => '⚠️ Esta fecha ya está registrada como día inhábil.'
+                    ]);
+                }
             }
 
+            $data = [
+                'fecha' => $request->fecha,
+                'tipo' => $request->tipo,
+            ];
+
             if ($request->filled('id')) {
-                $dia = DiaInhabil::findOrFail($request->id);
-                $dia->update(['fecha' => $request->fecha]);
-                $mensaje = '✅ Día inhábil actualizado correctamente.';
+                $fecha = Fecha::findOrFail($request->id);
+                $fecha->update($data);
+                $mensaje = '✅ Fecha actualizada correctamente.';
             } else {
-                $dia = DiaInhabil::create(['fecha' => $request->fecha]);
-                $mensaje = '✅ Día inhábil registrado correctamente.';
+                $fecha = Fecha::create($data);
+                $mensaje = '✅ Fecha registrada correctamente.';
             }
 
             return response()->json([
                 'success' => true,
                 'message' => $mensaje,
-                'dia' => $dia,
+                'dia' => $fecha,
                 'limpiar_password' => true
             ]);
         } catch (\Exception $e) {
@@ -500,16 +530,17 @@ class HorarioController extends Controller
                 return response()->json(['success' => false, 'message' => 'Sin permisos'], 403);
             }
 
-            $dia = DiaInhabil::find($id);
-            if (!$dia) {
-                return response()->json(['success' => false, 'message' => 'Día no encontrado'], 404);
+            $fecha = Fecha::find($id);
+            if (!$fecha) {
+                return response()->json(['success' => false, 'message' => 'Fecha no encontrada'], 404);
             }
 
             return response()->json([
                 'success' => true,
                 'dia' => [
-                    'id' => $dia->id,
-                    'fecha' => $dia->fecha ? $dia->fecha->format('Y-m-d') : null,
+                    'id' => $fecha->id,
+                    'fecha' => $fecha->fecha ? $fecha->fecha->format('Y-m-d') : null,
+                    'tipo' => $fecha->tipo,
                 ]
             ]);
         } catch (\Exception $e) {
@@ -535,7 +566,7 @@ class HorarioController extends Controller
                 ], 422);
             }
 
-            $dia = DiaInhabil::findOrFail($id);
+            $dia = Fecha::findOrFail($id);
             $dia->delete();
 
             return response()->json([

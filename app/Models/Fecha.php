@@ -5,14 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class DiaInhabil extends Model
+class Fecha extends Model
 {
     use HasFactory;
 
-    protected $table = 'dias_inhabiles';
+    protected $table = 'fechas';
     public $timestamps = false;
 
-    protected $fillable = ['fecha'];
+    protected $fillable = ['fecha', 'tipo'];
 
     protected $casts = [
         'fecha' => 'date'

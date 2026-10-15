@@ -167,6 +167,22 @@
                     </div>
                 </div>
 
+                <!-- Horario General -->
+                <div class="col-md-4">
+                    <div class="card module-card bg-dark text-white">
+                        <div class="card-body text-center">
+                            <div class="module-icon">
+                                <i class="fas fa-calendar-week"></i>
+                            </div>
+                            <h5>Horario General</h5>
+                            <p class="small">Consulta los horarios de todos los laboratorios</p>
+                            <a href="{{ route('admin.horario-general.index') }}" class="btn btn-light mt-2">
+                                <i class="fas fa-arrow-right"></i> Acceder
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

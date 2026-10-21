@@ -9,6 +9,7 @@ use App\Models\Practica;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class HorarioGeneralController extends Controller
 {
@@ -27,6 +28,9 @@ class HorarioGeneralController extends Controller
     public function datos(Request $request)
     {
         try {
+            $user = Auth::user();
+            $esAdmin = $user->isAdmin();
+
             // Fecha base (lunes de la semana). Si no se envía, usar la semana actual.
             $fechaBase = $request->filled('fecha')
                 ? Carbon::parse($request->fecha)
@@ -43,7 +47,7 @@ class HorarioGeneralController extends Controller
                 ? $mesInicio
                 : "{$mesInicio} - {$mesFin}";
 
-            // Días de la semana (lunes a viernes) con su fecha
+            // Días de la semana con su fecha
             $dias = [];
             $nombres = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
             for ($i = 0; $i < 5; $i++) {
@@ -73,7 +77,7 @@ class HorarioGeneralController extends Controller
             // Por cada laboratorio, armar su cuadrícula
             $resultado = [];
             foreach ($laboratorios as $lab) {
-                $cuadricula = $this->armarCuadricula($lab, $lunes, $dias, $diasInhabiles);
+                $cuadricula = $this->armarCuadricula($lab, $lunes, $dias, $diasInhabiles, $user, $esAdmin);
                 $resultado[] = [
                     'laboratorio' => [
                         'id' => $lab->id,
@@ -85,6 +89,7 @@ class HorarioGeneralController extends Controller
 
             return response()->json([
                 'success' => true,
+                'es_admin' => $esAdmin,
                 'semana' => [
                     'lunes' => $lunes->format('Y-m-d'),
                     'viernes' => $viernes->format('Y-m-d'),
@@ -104,7 +109,7 @@ class HorarioGeneralController extends Controller
      * Arma la cuadrícula de un laboratorio para la semana dada.
      * Retorna un array de 8 filas (horas 1-8), cada una con 5 columnas (días).
      */
-    private function armarCuadricula($lab, $lunes, $dias, $diasInhabiles)
+    private function armarCuadricula($lab, $lunes, $dias, $diasInhabiles, $user, $esAdmin)
     {
         // Inicializar cuadrícula vacía
         $cuadricula = [];
@@ -112,7 +117,7 @@ class HorarioGeneralController extends Controller
             $fila = ['hora' => $h];
             foreach ($dias as $dia) {
                 $fila[$dia['fecha']] = [
-                    'estado' => 'vacio',  // vacio | ocupado | inhabil
+                    'estado' => 'vacio',
                     'docente' => null,
                     'materia' => null,
                     'grupo' => null,
@@ -151,7 +156,7 @@ class HorarioGeneralController extends Controller
             ->whereIn('estatus', ['Reservada', 'Cumplida'])
             ->get();
 
-        // Mapear cada práctica a su celda (hora + fecha)
+        // Mapear cada práctica a su celda
         foreach ($practicas as $p) {
             if (!$p->horario || !$p->fecha_reserva) continue;
 
@@ -159,11 +164,23 @@ class HorarioGeneralController extends Controller
             $fecha = $p->fecha_reserva->format('Y-m-d');
 
             if (!isset($cuadricula[$hora][$fecha])) continue;
-
-            // No sobreescribir un día inhábil
             if ($cuadricula[$hora][$fecha]['estado'] === 'inhabil') continue;
 
             $horario = $p->horario;
+            $esPropia = $horario->id_maestro === $user->id;
+
+            // 🔒 Si NO es admin y la reserva es de otro docente → mostrar como "reservada"
+            if (!$esAdmin && !$esPropia) {
+                $cuadricula[$hora][$fecha] = [
+                    'estado' => 'reservada',
+                    'docente' => null,
+                    'materia' => null,
+                    'grupo' => null,
+                ];
+                continue;
+            }
+
+            // Admin o dueño de la reserva → mostrar todos los datos
             $cuadricula[$hora][$fecha] = [
                 'estado' => 'ocupado',
                 'docente' => $horario->maestro ? $horario->maestro->nombre_completo : '—',

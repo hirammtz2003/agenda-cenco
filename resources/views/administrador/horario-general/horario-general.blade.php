@@ -81,6 +81,12 @@
         font-size: 0.68rem;
         color: #6c757d;
     }
+    .celda-reservada {
+        background-color: #adb5bd;
+        color: white;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
     .fila-receso td {
         background-color: #f8d7da;
         color: #842029;
@@ -118,7 +124,7 @@
     <div class="row mb-4">
         <div class="col-12">
             <h2 class="border-bottom pb-3">
-                <i class="fas fa-calendar-week me-2 text-primary"></i>
+                <i class="fas fa-calendar-week me-2 text-dark"></i>
                 HORARIO GENERAL
             </h2>
         </div>
@@ -137,19 +143,22 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 
-    // ===== ESTADO =====
-    let fechaActual = null;         // Lunes de la semana mostrada
-    let cargando = false;
-
     const contenedor = document.getElementById('contenedorHorarios');
+    const semanasPorLab = {}; // { idLab: 'YYYY-MM-DD' (lunes de la semana mostrada) }
 
-    // ===== CARGA DE DATOS =====
-    function cargarSemana(fecha = null) {
-        if (cargando) return;
-        cargando = true;
+    // ===== CARGA INICIAL =====
+    // Traemos la semana actual y todos los labs juntos
+    cargarSemanaTodos();
 
+    function cargarSemanaTodos(fecha = null) {
         const params = new URLSearchParams();
         if (fecha) params.append('fecha', fecha);
+
+        contenedor.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-spinner fa-spin fa-3x text-primary mb-3"></i>
+                <p class="text-muted">Cargando horarios...</p>
+            </div>`;
 
         fetch(`{{ route("admin.horario-general.datos") }}?${params}`, {
             headers: { 'Accept': 'application/json' }
@@ -157,7 +166,10 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                fechaActual = data.semana.lunes;
+                // Guardar la semana base para cada lab
+                data.laboratorios.forEach(item => {
+                    semanasPorLab[item.laboratorio.id] = data.semana.lunes;
+                });
                 render(data);
             } else {
                 contenedor.innerHTML = `
@@ -174,59 +186,65 @@ document.addEventListener('DOMContentLoaded', function() {
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     Error de conexión.
                 </div>`;
-        })
-        .finally(() => { cargando = false; });
+        });
     }
 
-    // ===== RENDER =====
-    function render(data) {
-        let html = '';
+    // ===== RECARGA INDIVIDUAL POR LAB =====
+    function recargarLaboratorio(idLab, fecha) {
+        const params = new URLSearchParams();
+        if (fecha) params.append('fecha', fecha);
 
+        fetch(`{{ route("admin.horario-general.datos") }}?${params}`, {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const item = data.laboratorios.find(l => l.laboratorio.id === idLab);
+                if (!item) return;
+
+                semanasPorLab[idLab] = data.semana.lunes;
+
+                // Reemplazar solo el module-section de ese lab
+                const section = document.getElementById(`lab-section-${idLab}`);
+                if (section) {
+                    section.outerHTML = renderLaboratorio(item, data);
+                    bindEventosLab(idLab, data);
+                }
+            }
+        })
+        .catch(e => console.error(e));
+    }
+
+    // ===== RENDER GLOBAL =====
+    function render(data) {
         if (!data.laboratorios || data.laboratorios.length === 0) {
-            html = `
+            contenedor.innerHTML = `
                 <div class="module-section">
                     <div class="sin-labs">
                         <i class="fas fa-flask fa-3x mb-3"></i>
                         <p>No hay laboratorios registrados.</p>
                     </div>
                 </div>`;
-            contenedor.innerHTML = html;
             return;
         }
 
-        // Un module-section por laboratorio
-        data.laboratorios.forEach((item, idx) => {
+        let html = '';
+        data.laboratorios.forEach(item => {
             html += renderLaboratorio(item, data);
         });
-
-        // Navegación de semanas (una sola vez, abajo de todo)
-        html += `
-            <div class="module-section">
-                <div class="nav-semana">
-                    <button type="button" class="btn btn-outline-primary" id="btnAnterior">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <span class="rango">${formatearRango(data.semana.lunes, data.semana.viernes)}</span>
-                    <button type="button" class="btn btn-outline-primary" id="btnSiguiente">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm ms-3" id="btnHoy">
-                        <i class="fas fa-calendar-day me-1"></i>Hoy
-                    </button>
-                </div>
-            </div>`;
-
         contenedor.innerHTML = html;
 
-        // Listeners
-        document.getElementById('btnAnterior').addEventListener('click', () => cambiarSemana(-1));
-        document.getElementById('btnSiguiente').addEventListener('click', () => cambiarSemana(1));
-        document.getElementById('btnHoy').addEventListener('click', () => cargarSemana());
+        // Bind eventos
+        data.laboratorios.forEach(item => {
+            bindEventosLab(item.laboratorio.id, data);
+        });
     }
 
+    // ===== RENDER UN LAB =====
     function renderLaboratorio(item, data) {
         const lab = item.laboratorio;
-        const cuad = item.cuadricula; // { 1: { fecha1: {...}, fecha2: {...} }, 2: {...}, ... }
+        const cuad = item.cuadricula;
 
         // Headers
         let headers = `
@@ -244,12 +262,8 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let h = 1; h <= 8; h++) {
             const fila = cuad[h];
 
-            // Insertar fila de RECESO entre hora 3 y 4
             if (h === 4) {
-                body += `
-                    <tr class="fila-receso">
-                        <td colspan="6">RECESO</td>
-                    </tr>`;
+                body += `<tr class="fila-receso"><td colspan="6">RECESO</td></tr>`;
             }
 
             body += `<tr>
@@ -259,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         return `
-            <div class="module-section">
+            <div class="module-section" id="lab-section-${lab.id}">
                 <h5 class="mb-3">
                     <i class="fas fa-flask me-2 text-info"></i>
                     ${lab.nombre}
@@ -270,15 +284,57 @@ document.addEventListener('DOMContentLoaded', function() {
                         <tbody>${body}</tbody>
                     </table>
                 </div>
+                <div class="nav-semana">
+                    <button type="button" class="btn btn-outline-primary" data-nav="anterior" data-lab="${lab.id}">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span class="rango">${formatearRango(data.semana.lunes, data.semana.viernes)}</span>
+                    <button type="button" class="btn btn-outline-primary" data-nav="siguiente" data-lab="${lab.id}">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm ms-3" data-nav="semana-actual" data-lab="${lab.id}">
+                        <i class="fas fa-calendar-day me-1"></i>Volver a semana actual
+                    </button>
+                </div>
             </div>
         `;
     }
 
+    // ===== BIND EVENTOS DE UN LAB =====
+    function bindEventosLab(idLab, dataActual) {
+        const section = document.getElementById(`lab-section-${idLab}`);
+        if (!section) return;
+
+        section.querySelectorAll('[data-nav]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const accion = this.dataset.nav;
+                const fechaBase = semanasPorLab[idLab];
+
+                if (accion === 'semana-actual') {
+                    recargarLaboratorio(idLab, null);
+                    return;
+                }
+
+                const nueva = new Date(fechaBase + 'T12:00:00');
+                nueva.setDate(nueva.getDate() + (accion === 'siguiente' ? 7 : -7));
+                const yyyy = nueva.getFullYear();
+                const mm = String(nueva.getMonth() + 1).padStart(2, '0');
+                const dd = String(nueva.getDate()).padStart(2, '0');
+                recargarLaboratorio(idLab, `${yyyy}-${mm}-${dd}`);
+            });
+        });
+    }
+
+    // ===== RENDER CELDA =====
     function renderCelda(celda) {
         if (!celda) return `<td class="celda celda-vacia"></td>`;
 
         if (celda.estado === 'inhabil') {
             return `<td class="celda celda-inhabil"></td>`;
+        }
+
+        if (celda.estado === 'reservada') {
+            return `<td class="celda celda-reservada">Reservada</td>`;
         }
 
         if (celda.estado === 'ocupado') {
@@ -293,16 +349,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return `<td class="celda celda-vacia"></td>`;
     }
 
+    // ===== HELPERS =====
     function horaLegible(h) {
         const horas = {
-            1: '1 (8:00-8:50)',
-            2: '2 (8:50-9:40)',
-            3: '3 (9:40-10:30)',
-            4: '4 (11:00-11:50)',
-            5: '5 (11:50-12:40)',
-            6: '6 (12:40-13:30)',
-            7: '7 (13:30-14:20)',
-            8: '8 (14:20-15:00)',
+            1: '1 (8:00-8:50)', 2: '2 (8:50-9:40)', 3: '3 (9:40-10:30)',
+            4: '4 (11:00-11:50)', 5: '5 (11:50-12:40)', 6: '6 (12:40-13:30)',
+            7: '7 (13:30-14:20)', 8: '8 (14:20-15:00)',
         };
         return horas[h] || h;
     }
@@ -319,20 +371,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return `${aD} de ${mesA} al ${bD} de ${mesB} de ${bY}`;
     }
-
-    // ===== NAVEGACIÓN =====
-    function cambiarSemana(deltaSemanas) {
-        if (!fechaActual) return;
-        const nueva = new Date(fechaActual + 'T12:00:00');
-        nueva.setDate(nueva.getDate() + (deltaSemanas * 7));
-        const yyyy = nueva.getFullYear();
-        const mm = String(nueva.getMonth() + 1).padStart(2, '0');
-        const dd = String(nueva.getDate()).padStart(2, '0');
-        cargarSemana(`${yyyy}-${mm}-${dd}`);
-    }
-
-    // ===== INICIALIZAR =====
-    cargarSemana();
 });
 </script>
 @endpush

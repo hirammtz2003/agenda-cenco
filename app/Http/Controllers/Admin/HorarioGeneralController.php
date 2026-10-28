@@ -203,4 +203,98 @@ class HorarioGeneralController extends Controller
         ];
         return $meses[$numeroMes] ?? '';
     }
+
+    /**
+     * Devuelve las prácticas del día actual agrupadas por laboratorio.
+     * Solo para admin (validación en el endpoint).
+     */
+    public function welcomeDatos()
+    {
+        try {
+            if (!Auth::user()->isAdmin()) {
+                return response()->json(['success' => false, 'message' => 'Sin permisos'], 403);
+            }
+
+            $hoy = Carbon::today();
+            $fechaHoy = $hoy->format('Y-m-d');
+
+            // Verificar si hoy es día inhábil
+            $esInhabil = Fecha::where('tipo', 'Día inhábil')
+                ->where('fecha', $fechaHoy)
+                ->exists();
+
+            // Laboratorios
+            $laboratorios = Laboratorio::orderBy('nombre')->get();
+
+            // Prácticas del día
+            $practicas = Practica::with([
+                'horario.grupo',
+                'horario.maestro',
+                'horario.materia',
+                'horario.laboratorio',
+            ])
+                ->where('fecha_reserva', $fechaHoy)
+                ->whereIn('estatus', ['Reservada', 'Cumplida'])
+                ->get();
+
+            // Agrupar por laboratorio
+            $resultado = [];
+            foreach ($laboratorios as $lab) {
+                $practicasLab = $practicas->filter(function ($p) use ($lab) {
+                    return $p->horario && $p->horario->id_laboratorio === $lab->id;
+                })->sortBy(function ($p) {
+                    return $p->horario->hora;
+                })->values()->map(function ($p) {
+                    return [
+                        'id' => $p->id,
+                        'hora' => $p->horario->hora,
+                        'hora_legible' => $p->horario->hora_legible,
+                        'docente' => $p->horario->maestro ? $p->horario->maestro->nombre_completo : '—',
+                        'grupo' => $p->horario->grupo 
+                            ? $this->abreviarCarrera("{$p->horario->grupo->semestre} {$p->horario->grupo->grupo} - {$p->horario->grupo->carrera}")
+                            : '—',
+                        'materia' => $p->horario->materia ? $p->horario->materia->nombre : '—',
+                        'herramientas' => $p->herramientas ?? [],
+                        'materiales' => $p->materiales ?? [],
+                    ];
+                });
+
+                $resultado[] = [
+                    'laboratorio' => [
+                        'id' => $lab->id,
+                        'nombre' => $lab->nombre,
+                    ],
+                    'es_inhabil' => $esInhabil,
+                    'practicas' => $practicasLab,
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'fecha' => $fechaHoy,
+                'laboratorios' => $resultado,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error en welcome datos: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Abrevia el nombre de la carrera en una cadena de grupo.
+     */
+    private function abreviarCarrera($texto)
+    {
+        $mapa = [
+            'Soporte y Mantenimiento de Equipo de Cómputo' => 'SMEC',
+            'Soporte y Gestión de Tecnologías Informáticas' => 'SyGTI',
+            'Enfermería General' => 'EG',
+            'Ventas' => 'Ventas',
+            'Diseño Gráfico Digital' => 'DGD',
+        ];
+        foreach ($mapa as $largo => $corto) {
+            $texto = str_replace($largo, $corto, $texto);
+        }
+        return $texto;
+    }
 }

@@ -262,10 +262,10 @@
             </div>
         </div>
 
-        <!-- FORMULARIO DÍAS INHÁBILES (Derecha) -->
+        <!-- FORMULARIO FECHAS RELEVANTES (Derecha) -->
         <div class="col-lg-4">
             <div class="module-section h-100">
-                <h5 class="mb-4"><i class="fas fa-calendar-times me-2"></i> DÍAS INHÁBILES</h5>
+                <h5 class="mb-4"><i class="fas fa-calendar-times me-2"></i> FECHAS RELEVANTES</h5>
                 
                 <div class="form-row">
                     <input type="hidden" id="diaId" value="">
@@ -405,7 +405,7 @@
         <!-- TABLA DÍAS INHÁBILES (Derecha) -->
         <div class="col-lg-4">
             <div class="module-section h-100">
-                <h5 class="mb-4"><i class="fas fa-search me-2"></i> CONSULTA DE DÍAS INHÁBILES</h5>
+                <h5 class="mb-4"><i class="fas fa-search me-2"></i> CONSULTA DE FECHAS RELEVANTES</h5>
 
                 <div class="row mb-3 g-2">
                     <div class="col-8">

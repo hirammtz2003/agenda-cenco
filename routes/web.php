@@ -61,6 +61,9 @@ Route::middleware(['auth', 'verificar.password.temporal'])->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\HorarioGeneralController::class, 'index'])->name('index');
         Route::get('/datos', [App\Http\Controllers\Admin\HorarioGeneralController::class, 'datos'])->name('datos');
     });
+
+    Route::get('/welcome-datos', [App\Http\Controllers\Admin\HorarioGeneralController::class, 'welcomeDatos'])
+    ->name('admin.horario-general.welcome-datos');
     
     // ============ MÓDULOS DE ADMINISTRACIÓN (SOLO ADMIN) ============
     Route::prefix('admin')->name('admin.')->middleware(['admin'])->group(function () {

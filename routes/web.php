@@ -46,14 +46,14 @@ Route::middleware(['auth', 'verificar.password.temporal'])->group(function () {
     });
 
     Route::prefix('historial')->name('historial.')->group(function () {
-        Route::get('/', [App\Http\Controllers\Admin\HistorialController::class, 'index'])->name('index');
-        Route::get('/listar', [App\Http\Controllers\Admin\HistorialController::class, 'listar'])->name('listar');
-        Route::get('/detalles/{id}', [App\Http\Controllers\Admin\HistorialController::class, 'detalles'])->name('detalles');
-        Route::post('/actualizar-estatus', [App\Http\Controllers\Admin\HistorialController::class, 'actualizarEstatus'])->name('actualizar.estatus');
-        Route::delete('/{id}', [App\Http\Controllers\Admin\HistorialController::class, 'eliminar'])->name('eliminar');
+        Route::get('/', [HistorialController::class, 'index'])->name('index');
+        Route::get('/listar', [HistorialController::class, 'listar'])->name('listar');
+        Route::get('/detalles/{id}', [HistorialController::class, 'detalles'])->name('detalles');
+        Route::post('/actualizar-estatus', [HistorialController::class, 'actualizarEstatusHora'])->name('actualizar.estatus');
+        Route::delete('/{id}', [HistorialController::class, 'eliminar'])->name('eliminar');
         
-        Route::get('/laboratorios/listar', [App\Http\Controllers\Admin\HistorialController::class, 'listarLaboratorios'])->name('laboratorios.listar');
-        Route::get('/materias-por-laboratorio', [App\Http\Controllers\Admin\HistorialController::class, 'listarMateriasPorLaboratorio'])->name('materias.por.laboratorio');
+        Route::get('/laboratorios/listar', [HistorialController::class, 'listarLaboratorios'])->name('laboratorios.listar');
+        Route::get('/materias-por-laboratorio', [HistorialController::class, 'listarMateriasPorLaboratorio'])->name('materias.por.laboratorio');
     });
 
     // Horario General (visible para todos los usuarios autenticados)

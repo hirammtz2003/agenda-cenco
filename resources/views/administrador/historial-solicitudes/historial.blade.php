@@ -71,6 +71,8 @@
 
 @section('content')
 
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
 <div class="container-fluid px-4">
     @include('partials.breadcrumb')
 
@@ -146,9 +148,9 @@
                         <th>Grupo</th>
                         <th>Laboratorio</th>
                         <th>Materia</th>
+                        <th>Nombre</th>
                         <th>Estatus</th>
                         <th>F. Solicitud</th>
-                        <th>F. Reserva</th>
                         <th>Detalles</th>
                         <th>Acciones</th>
                     </tr>
@@ -240,67 +242,31 @@
 
 <!-- ============ MODAL: EDITAR ESTATUS ============ -->
 <div class="modal fade" id="modalEditar" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-warning">
-                <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Editar Estatus</h5>
+                <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Editar Práctica</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <input type="hidden" id="editId">
                 <div class="mb-3">
-                    <label class="form-label">Estatus *</label>
-                    <select id="editEstatus" class="form-select">
-                        <option value="Reservada">Reservada</option>
-                        <option value="Cumplida">Cumplida</option>
-                        <option value="No cumplida">No cumplida</option>
-                    </select>
+                    <label class="form-label fw-bold">Horas de la práctica:</label>
+                    <div id="listaHorasEditar" class="border rounded p-2" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Se llena con JS -->
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label"><i class="fas fa-lock me-1"></i>Contraseña de Administrador *</label>
                     <input type="password" class="form-control" id="editPassword"
-                           placeholder="Ingrese su contraseña"
+                           placeholder="Ingrese su contraseña para autorizar los cambios"
                            autocomplete="new-password">
+                    <small class="text-muted">Requerida para guardar los cambios de estatus.</small>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-warning" id="btnGuardarEstatus">
-                    <i class="fas fa-save me-1"></i>Guardar
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ============ MODAL: ELIMINAR PRÁCTICA ============ -->
-<div class="modal fade" id="modalEliminar" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="fas fa-trash me-2"></i>Eliminar Reserva</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="eliminarId">
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    ¿Está seguro de eliminar la reserva?
-                    Esta acción no se puede deshacer.
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">
-                        <i class="fas fa-lock me-1"></i>Contraseña de Usuario *
-                    </label>
-                    <input type="password" class="form-control" id="eliminarPassword"
-                           placeholder="Ingrese su contraseña para confirmar"
-                           autocomplete="new-password">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">
-                    <i class="fas fa-trash me-1"></i>Eliminar
+                <button type="button" class="btn btn-warning" id="btnGuardarEstatusMasivo">
+                    <i class="fas fa-save me-1"></i>Guardar Cambios
                 </button>
             </div>
         </div>
@@ -312,7 +278,7 @@
 @push('scripts')
 <script>
 window.addEventListener('load', function() {
-    @if(true)
+
     console.log('Historial: JS cargado');
     
     // Verificar Bootstrap
@@ -333,7 +299,6 @@ window.addEventListener('load', function() {
 
     const modalDetalles = new bootstrap.Modal(document.getElementById('modalDetalles'));
     const modalEditar = new bootstrap.Modal(document.getElementById('modalEditar'));
-    const modalEliminar = new bootstrap.Modal(document.getElementById('modalEliminar'));
 
     // ===== CARGAR LABORATORIOS =====
     function cargarLaboratorios() {
@@ -404,7 +369,7 @@ window.addEventListener('load', function() {
 
     function renderTabla(practicas) {
         if (practicas.length === 0) {
-            const colspan = esAdmin ? 9 : 8;  // 9 si admin, 8 si docente
+            const colspan = esAdmin ? 9 : 8;
             tablaHistorial.innerHTML = `
                 <tr>
                     <td colspan="${colspan}" class="text-center py-4">
@@ -419,7 +384,6 @@ window.addEventListener('load', function() {
         practicas.forEach(p => {
             html += `<tr data-id="${p.id}">`;
 
-            // Columna Docente: solo si es admin
             if (esAdmin) {
                 html += `<td><small>${p.docente}</small></td>`;
             }
@@ -428,49 +392,31 @@ window.addEventListener('load', function() {
                 <td><small>${p.grupo}</small></td>
                 <td><small>${p.laboratorio}</small></td>
                 <td><small>${p.materia}</small></td>
+                <td><small>${p.nombre_practica}</small></td>
                 <td><span class="estatus-badge ${estatusClase(p.estatus)}">${p.estatus}</span></td>
                 <td><small>${p.fecha_solicitud}</small></td>
-                <td><small>${p.fecha_reserva}</small></td>
                 <td>
                     <button type="button" class="btn btn-sm btn-outline-info btn-detalles" data-id="${p.id}">
                         <i class="fas fa-eye"></i> Ver
                     </button>
                 </td>
                 <td>
-                    <div class="btn-group" role="group">
-                        ${esAdmin ? `
-                            <button type="button" class="btn btn-sm btn-outline-primary btn-editar" 
-                                    data-id="${p.id}" data-estatus="${p.estatus}">
-                                <i class="fas fa-edit"></i> Editar
-                            </button>
-                        ` : ''}
-                        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar" 
-                                data-id="${p.id}" data-nombre="${p.nombre_practica}">
-                            <i class="fas fa-trash"></i> Eliminar
-                        </button>
-                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary btn-editar" data-id="${p.id}">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
                 </td>
             </tr>`;
         });
         tablaHistorial.innerHTML = html;
 
-        // Eventos detalles
         document.querySelectorAll('.btn-detalles').forEach(btn => {
             btn.addEventListener('click', function() {
                 verDetalles(this.dataset.id);
             });
         });
-
-        // Eventos editar
         document.querySelectorAll('.btn-editar').forEach(btn => {
             btn.addEventListener('click', function() {
-                abrirEditar(this.dataset.id, this.dataset.nombre, this.dataset.estatus);
-            });
-        });
-        // Eventos Eliminar
-        document.querySelectorAll('.btn-eliminar').forEach(btn => {
-            btn.addEventListener('click', function() {
-                eliminarPractica(this.dataset.id, this.dataset.nombre);
+                abrirEditar(this.dataset.id);
             });
         });
     }
@@ -516,47 +462,123 @@ window.addEventListener('load', function() {
         .catch(e => { console.error(e); alert('Error al cargar detalles.'); });
     }
 
-    // ===== EDITAR ESTATUS =====
-    function abrirEditar(id, nombre, estatus) {
-        document.getElementById('editId').value = id;
-        document.getElementById('editEstatus').value = estatus;
-        document.getElementById('editPassword').value = '';
-        modalEditar.show();
+    // Variable global para guardar los cambios pendientes en el modal
+    let cambiosPendientes = {};
+
+    // ===== ABRIR MODAL =====
+    function abrirEditar(id) {
+        cambiosPendientes = {}; // Limpiar cambios
+        fetch(`{{ url('historial/detalles') }}/${id}`, { headers: { 'Accept': 'application/json' } })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const p = data.practica;
+                document.getElementById('editPassword').value = '';
+
+                const cont = document.getElementById('listaHorasEditar');
+                if (p.horas.length === 0) {
+                    cont.innerHTML = '<p class="text-muted mb-0">No hay horas registradas.</p>';
+                } else {
+                    let html = '';
+                    p.horas.forEach(h => {
+                        const estatusColor = h.estatus === 'Reservada' ? 'primary'
+                                        : h.estatus === 'Cumplida' ? 'success' : 'danger';
+                        html += `
+                            <div class="d-flex align-items-center justify-content-between py-2 border-bottom" id="fila-hora-${h.id}">
+                                <div>
+                                    <strong>${h.hora_legible}</strong>
+                                    <span class="text-muted"> — ${h.dia_legible} ${h.fecha_reserva}</span>
+                                    <br>
+                                    <span class="badge bg-${estatusColor} badge-estatus" data-id="${h.id}">${h.estatus}</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <select class="form-select form-select-sm estatus-select" 
+                                            data-id="${h.id}" 
+                                            data-original="${h.estatus}"
+                                            style="width: 140px;">
+                                        <option value="Reservada" ${h.estatus === 'Reservada' ? 'selected' : ''}>Reservada</option>
+                                        <option value="Cumplida" ${h.estatus === 'Cumplida' ? 'selected' : ''}>Cumplida</option>
+                                        <option value="No cumplida" ${h.estatus === 'No cumplida' ? 'selected' : ''}>No cumplida</option>
+                                    </select>
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-hora" 
+                                            data-id="${h.id}" 
+                                            data-nombre="${h.hora_legible} (${h.dia_legible} ${h.fecha_reserva})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>`;
+                    });
+                    cont.innerHTML = html;
+
+                    // Bind de selects
+                    cont.querySelectorAll('.estatus-select').forEach(sel => {
+                        sel.addEventListener('change', function() {
+                            const idHora = this.dataset.id;
+                            const nuevoEstatus = this.value;
+                            const original = this.dataset.original;
+                            
+                            // Actualizar badge visual
+                            //document.getElementById(`badge-estatus-${idHora}`).textContent = nuevoEstatus;
+                            
+                            // Guardar en pendientes
+                            if (nuevoEstatus !== original) {
+                                cambiosPendientes[idHora] = nuevoEstatus;
+                            } else {
+                                delete cambiosPendientes[idHora]; // Si vuelve al original, quitar
+                            }
+                        });
+                    });
+
+                    // Bind de botones eliminar
+                    cont.querySelectorAll('.btn-eliminar-hora').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            eliminarHora(this.dataset.id, this.dataset.nombre);
+                        });
+                    });
+                }
+
+                modalEditar.show();
+            } else {
+                alert('⚠️ ' + data.message);
+            }
+        })
+        .catch(e => { console.error(e); alert('Error al cargar detalles.'); });
     }
 
-    // ELIMINAR PRÁCTICA
-    function eliminarPractica(id, nombre) {
-        document.getElementById('eliminarId').value = id;
-        document.getElementById('eliminarPassword').value = '';
-        modalEliminar.show();
-    }
-
-    document.getElementById('btnGuardarEstatus').addEventListener('click', function() {
-        const id = document.getElementById('editId').value;
-        const estatus = document.getElementById('editEstatus').value;
+    // ===== GUARDAR CAMBIOS MASIVOS =====
+    document.getElementById('btnGuardarEstatusMasivo').addEventListener('click', function() {
         const password = document.getElementById('editPassword').value;
-
         if (!password) {
-            alert('⚠️ Debe ingresar su contraseña.');
+            alert('⚠️ Ingrese su contraseña de administrador.');
+            document.getElementById('editPassword').focus();
+            return;
+        }
+
+        // Convertir el objeto de cambios pendientes a un array
+        const cambios = Object.keys(cambiosPendientes).map(id => ({
+            id: id,
+            estatus: cambiosPendientes[id]
+        }));
+
+        if (cambios.length === 0) {
+            alert('⚠️ No hay cambios pendientes por guardar.');
             return;
         }
 
         const btn = this;
         btn.disabled = true;
-        const original = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Guardando...';
 
         fetch('{{ route("historial.actualizar.estatus") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Accept': 'application/json'
             },
             body: JSON.stringify({
                 current_password: password,
-                id: id,
-                estatus: estatus
+                cambios: cambios // Enviamos el array completo
             })
         })
         .then(r => r.json())
@@ -572,30 +594,25 @@ window.addEventListener('load', function() {
         .catch(e => { console.error(e); alert('Error de conexión.'); })
         .finally(() => {
             btn.disabled = false;
-            btn.innerHTML = original;
+            btn.innerHTML = '<i class="fas fa-save me-1"></i>Guardar Cambios';
         });
     });
 
-    document.getElementById('btnConfirmarEliminar').addEventListener('click', function() {
-        const id = document.getElementById('eliminarId').value;
-        const password = document.getElementById('eliminarPassword').value;
+    // ===== ELIMINAR HORA INDIVIDUAL =====
+    function eliminarHora(id, nombre) {
+        if (!confirm(`¿Eliminar la hora "${nombre}"? Esta acción no se puede deshacer.`)) return;
 
+        const password = document.getElementById('editPassword').value;
         if (!password) {
-            alert('⚠️ Debe ingresar su contraseña.');
-            document.getElementById('eliminarPassword').focus();
+            alert('⚠️ Ingrese su contraseña para eliminar.');
             return;
         }
-
-        const btn = this;
-        btn.disabled = true;
-        const original = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Eliminando...';
 
         fetch(`{{ url('historial') }}/${id}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Accept': 'application/json'
             },
             body: JSON.stringify({ current_password: password })
@@ -604,23 +621,14 @@ window.addEventListener('load', function() {
         .then(data => {
             if (data.success) {
                 alert(data.message);
-                modalEliminar.hide();
+                modalEditar.hide();
                 listar();
             } else {
                 alert('⚠️ ' + data.message);
             }
         })
-        .catch(e => { console.error(e); alert('Error de conexión.'); })
-        .finally(() => {
-            btn.disabled = false;
-            btn.innerHTML = original;
-        });
-    });
-
-    document.getElementById('modalEliminar').addEventListener('hidden.bs.modal', function() {
-        document.getElementById('eliminarPassword').value = '';
-        document.getElementById('eliminarId').value = '';
-    });
+        .catch(e => { console.error(e); alert('Error de conexión.'); });
+    }
 
     // ===== FILTROS =====
     btnFiltrar.addEventListener('click', listar);
@@ -644,8 +652,6 @@ window.addEventListener('load', function() {
     cargarLaboratorios();
     cargarMaterias(null);
     listar();
-
-    @endif
 });
 </script>
 @endpush
